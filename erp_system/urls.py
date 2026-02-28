@@ -17,4 +17,7 @@ urlpatterns = [
     
     # Screen 2: Sales & Items Management APIs
     path('api/screen2/', include('screen_2_sales_items.urls')),
+    
+    # Screen 4: Accounts & Finance APIs
+    path('api/accounts/', include('accounts.urls', namespace='accounts')),
 ]

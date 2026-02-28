@@ -26,7 +26,6 @@ from products.models import Product
 from sales.models import Sale
 from invoices.models import Invoice
 from purchases.models import Purchase
-from accounts.models import Account
 
 from .serializers import (
     DashboardKPISerializer,
@@ -100,11 +99,7 @@ def dashboard_kpis(request):
             stock_quantity__lt=F('reorder_level')
         ).count()
 
-        # Account Balance (sum of all account balances)
-        account_balance_aggregate = Account.objects.aggregate(
-            total=Sum('balance')
-        )
-        account_balance = account_balance_aggregate['total'] or Decimal('0.00')
+        # Note: Account balance removed - Screen 4 (Accounts) is independent
 
         # Prepare response data
         kpi_data = {
@@ -115,7 +110,6 @@ def dashboard_kpis(request):
             'total_invoices': total_invoices,
             'unpaid_invoices': unpaid_invoices,
             'low_stock_count': low_stock_count,
-            'account_balance': account_balance
         }
 
         serializer = DashboardKPISerializer(data=kpi_data)

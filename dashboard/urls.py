@@ -32,3 +32,19 @@ urlpatterns = [
     # Sales performance over time
     path('sales-performance/', views.sales_performance, name='sales-performance'),
 ]
+
+"""
+API ENDPOINTS:
+==============
+
+Dashboard KPIs:
+- GET /api/dashboard/kpis/                    # Get all primary KPIs
+
+Analytics:
+- GET /api/dashboard/monthly-revenue/          # Get monthly revenue breakdown
+- GET /api/dashboard/top-products/             # Get top selling products
+- GET /api/dashboard/low-stock-products/       # Get low stock alerts
+- GET /api/dashboard/recent-sales/             # Get recent sales transactions
+- GET /api/dashboard/outstanding-invoices/     # Get outstanding invoices
+- GET /api/dashboard/sales-performance/        # Get sales performance over time
+"""

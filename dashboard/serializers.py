@@ -47,4 +47,3 @@ class DashboardKPISerializer(serializers.Serializer):
     total_invoices = serializers.IntegerField()
     unpaid_invoices = serializers.IntegerField()
     low_stock_count = serializers.IntegerField()
-    account_balance = serializers.DecimalField(max_digits=15, decimal_places=2)
