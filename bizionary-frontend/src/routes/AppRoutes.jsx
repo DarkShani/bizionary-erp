@@ -8,6 +8,10 @@ import ProductList from '../pages/products/ProductList';
 import SalesList from '../pages/sales/SalesList';
 import PurchasesList from '../pages/purchases/PurchasesList';
 import InvoicesList from '../pages/invoices/InvoicesList';
+import UserManagement from '../pages/user-management/UserManagement';
+import AccountsManager from '../pages/accounts/AccountsManager';
+import CustomersAndStocks from '../pages/customers-stock/CustomersAndStocks';
+import Settings from '../pages/settings/Settings';
 
 // Placeholders for other pages
 const Placeholder = ({ title }) => (
@@ -28,8 +32,14 @@ const AppRoutes = () => {
                 <Route path="sales" element={<SalesList />} />
                 <Route path="purchases" element={<PurchasesList />} />
                 <Route path="invoices" element={<InvoicesList />} />
-                <Route path="customers-stock" element={<Placeholder title="Customers Stock Orders" />} />
-                <Route path="accounts" element={<Placeholder title="Accounts & User Management" />} />
+                <Route path="customers-stock" element={<CustomersAndStocks />} />
+                <Route path="accounts" element={<AccountsManager />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="user-management" element={
+                    <ProtectedRoute requiredRole="Admin">
+                        <UserManagement />
+                    </ProtectedRoute>
+                } />
             </Route>
 
             {/* Fallback */}

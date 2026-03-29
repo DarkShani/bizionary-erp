@@ -10,7 +10,11 @@
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
+  --color-ai-purple: #8b5cf6;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #101a22;
 }
+
 
 @layer base {
   body {
@@ -19,4 +23,12 @@
     font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     margin: 0;
   }
+}
+
+.ai-gradient {
+  background: linear-gradient(135deg, #1392ec 0%, #8b5cf6 100%);
+}
+
+.ai-glow {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
 }
