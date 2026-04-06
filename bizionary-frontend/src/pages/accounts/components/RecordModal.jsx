@@ -36,16 +36,6 @@ const RecordModal = ({ isOpen, onClose, recordType, record, triggerRefresh }) =>
         e.preventDefault();
         setSaving(true);
         try {
-            // Check for mock data save
-            if (record && record.id <= 2 && typeof record.id === 'number') {
-                setTimeout(() => {
-                    setSaving(false);
-                    triggerRefresh();
-                    onClose();
-                }, 500);
-                return;
-            }
-
             const dataToSave = { ...formData };
             if (dataToSave.amount) dataToSave.amount = parseFloat(dataToSave.amount);
 

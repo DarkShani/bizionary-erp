@@ -27,6 +27,23 @@ class Sale(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(Decimal('0.01'))]
     )
+    discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))]
+    )
+    invoice_number = models.CharField(max_length=50, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('PAID', 'Paid'),
+            ('PENDING', 'Pending'),
+            ('FAILED', 'Failed'),
+        ],
+        default='PAID'
+    )
     sale_date = models.DateField()
     payment_method = models.CharField(
         max_length=50,

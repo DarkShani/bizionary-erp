@@ -18,11 +18,8 @@ const ExpensesTab = ({ refreshTrigger, onEdit, triggerRefresh }) => {
                     setExpenses(res.data);
                 }
             } catch (error) {
-                console.warn('Failed to fetch expenses, using mock data.');
-                setExpenses([
-                    { id: 1, category_display: 'Office Supplies', category: 'SUPPLIES', vendor: 'Office World', amount: 15000, date: '2023-11-01', description: 'Printer ink and paper' },
-                    { id: 2, category_display: 'Utilities', category: 'UTILITIES', vendor: 'K-Electric', amount: 45000, date: '2023-11-05', description: 'Monthly electricity bill' }
-                ]);
+                console.warn('Failed to fetch expenses.');
+                setExpenses([]);
             } finally {
                 setLoading(false);
             }
@@ -34,10 +31,6 @@ const ExpensesTab = ({ refreshTrigger, onEdit, triggerRefresh }) => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this expense record?')) {
             try {
-                if (expenses.length > 0 && expenses[0].vendor === 'Office World' && id <= 2) {
-                     setExpenses(expenses.filter(e => e.id !== id));
-                     return;
-                }
                 await accountsApi.deleteExpense(id);
                 triggerRefresh();
             } catch (error) {

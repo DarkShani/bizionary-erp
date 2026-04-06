@@ -24,13 +24,8 @@ const PurchasesList = () => {
             let data = res.data.data || res.data;
             setPurchases(data);
         } catch (error) {
-            console.warn("Failed to fetch purchases from backend, using mock data for demo.");
-            // Fallback Mock Data
-            setPurchases([
-                { id: 1, product: 1, product_name: 'A4 Copy Paper 80 GSM', vendor_name: 'Paper Mill Co', quantity_purchased: 500, unit_cost: 1200, total_cost: 600000, purchase_date: '2024-05-10' },
-                { id: 2, product: 2, product_name: 'Office Chair Exec', vendor_name: 'Furniture Plus', quantity_purchased: 20, unit_cost: 15000, total_cost: 300000, purchase_date: '2024-05-12' },
-                { id: 3, product: 3, product_name: 'Wireless Mouse', vendor_name: 'Logitech Distro', quantity_purchased: 100, unit_cost: 2000, total_cost: 200000, purchase_date: '2024-05-14' },
-            ]);
+            console.warn('Failed to fetch purchases from backend.');
+            setPurchases([]);
         } finally {
             setLoading(false);
         }
@@ -39,19 +34,11 @@ const PurchasesList = () => {
     const handleCreateOrUpdate = async (purchaseData) => {
         try {
             if (currentPurchase) {
-                // Update
-                // await api.put(`purchases/${currentPurchase.id}/`, purchaseData);
-                const updatedObj = { ...currentPurchase, ...purchaseData, total_cost: purchaseData.quantity_purchased * purchaseData.unit_cost };
-                setPurchases(prev => prev.map(p => p.id === currentPurchase.id ? updatedObj : p));
+                await api.put(`purchases/${currentPurchase.id}/`, purchaseData);
             } else {
-                // Create
-                // const res = await api.post('purchases/', purchaseData);
-                // setPurchases([...purchases, res.data]);
-
-                // Mock Add
-                const newObj = { ...purchaseData, id: Date.now(), total_cost: purchaseData.quantity_purchased * purchaseData.unit_cost, purchase_date: new Date().toISOString().split('T')[0] };
-                setPurchases(prev => [newObj, ...prev]);
+                await api.post('purchases/', purchaseData);
             }
+            await fetchPurchases();
             setIsFormOpen(false);
             setCurrentPurchase(null);
         } catch (error) {
@@ -61,8 +48,8 @@ const PurchasesList = () => {
 
     const handleDelete = async (id) => {
         try {
-            // await api.delete(`purchases/${id}/`);
-            setPurchases(prev => prev.filter(p => p.id !== id));
+            await api.delete(`purchases/${id}/`);
+            await fetchPurchases();
         } catch (error) {
             alert("Failed to delete purchase.");
         }
@@ -80,7 +67,7 @@ const PurchasesList = () => {
 
     const filteredPurchases = purchases.filter(p =>
         (p.product_name && p.product_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.vendor_name && p.vendor_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (p.supplier_name && p.supplier_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         p.id.toString().includes(searchTerm)
     );
 
@@ -142,7 +129,7 @@ const PurchasesList = () => {
                                     <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-textMuted font-mono text-xs">PO-{p.id.toString().padStart(4, '0')}</td>
                                         <td className="px-6 py-4 text-textMuted">{p.purchase_date}</td>
-                                        <td className="px-6 py-4 font-medium text-textMain">{p.vendor_name}</td>
+                                        <td className="px-6 py-4 font-medium text-textMain">{p.supplier_name}</td>
                                         <td className="px-6 py-4 font-bold text-textMain">{p.product_name || `Product ID: ${p.product}`}</td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100">

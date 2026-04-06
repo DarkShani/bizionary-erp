@@ -25,6 +25,8 @@ class LowStockProductSerializer(serializers.Serializer):
     stock_quantity = serializers.IntegerField()
     reorder_level = serializers.IntegerField()
     unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    inventory_value = serializers.DecimalField(max_digits=15, decimal_places=2)
+    isReorder = serializers.BooleanField(required=False, default=False)
 
 
 class RecentSaleSerializer(serializers.Serializer):

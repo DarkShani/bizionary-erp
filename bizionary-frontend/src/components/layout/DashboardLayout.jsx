@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
-import AIChatbotWidget from '../common/AIChatbotWidget';
 
 const DashboardLayout = () => {
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -16,8 +15,6 @@ const DashboardLayout = () => {
                     <Outlet />
                 </main>
             </div>
-            {/* Floating AI Chatbot Widget */}
-            <AIChatbotWidget />
         </div>
     );
 };

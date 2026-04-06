@@ -19,15 +19,8 @@ const InvoicesList = () => {
             let data = res.data.data || res.data;
             setInvoices(data);
         } catch (error) {
-            console.warn("Failed to fetch invoices from backend, using mock data for demo.");
-            // Fallback Mock Data
-            setInvoices([
-                { id: 1, invoice_number: 'INV-2024-001', customer_name: 'Tech Solutions Inc', issue_date: '2024-05-01', due_date: '2024-05-15', subtotal: 75000, tax_amount: 3750, discount_amount: 0, total_amount: 78750, balance_due: 0, is_overdue: false, status: 'Paid' },
-                { id: 2, invoice_number: 'INV-2024-002', customer_name: 'Startup Hub', issue_date: '2024-05-05', due_date: '2024-05-20', subtotal: 72000, tax_amount: 3600, discount_amount: 5000, total_amount: 70600, balance_due: 70600, is_overdue: true, status: 'Overdue' },
-                { id: 3, invoice_number: 'INV-2024-003', customer_name: 'Freelancer Co', issue_date: '2024-05-10', due_date: '2024-05-25', subtotal: 25000, tax_amount: 1250, discount_amount: 0, total_amount: 26250, balance_due: 26250, is_overdue: false, status: 'Sent' },
-                { id: 4, invoice_number: 'INV-2024-004', customer_name: 'Local School', issue_date: '2024-05-12', due_date: '2024-05-27', subtotal: 11250, tax_amount: 562.5, discount_amount: 0, total_amount: 11812.5, balance_due: 0, is_overdue: false, status: 'Paid' },
-                { id: 5, invoice_number: 'INV-2024-005', customer_name: 'Tech Solutions Inc', issue_date: '2024-05-18', due_date: '2024-06-02', subtotal: 7000, tax_amount: 350, discount_amount: 0, total_amount: 7350, balance_due: 7350, is_overdue: false, status: 'Draft' },
-            ]);
+            console.warn('Failed to fetch invoices from backend.');
+            setInvoices([]);
         } finally {
             setLoading(false);
         }

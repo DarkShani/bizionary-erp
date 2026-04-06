@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Users, FolderKanban, Settings, Package, ShoppingBag, FileText, X } from 'lucide-react';
+import { LayoutDashboard, Users, FolderKanban, Settings, Package, ShoppingCart, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -8,6 +8,8 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     const navigation = [
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+        { name: 'Products', href: '/products', icon: Package },
+        { name: 'Sales', href: '/sales', icon: ShoppingCart },
         { name: 'Customer & Stocks', href: '/customers-stock', icon: Users },
         { name: 'Accounts', href: '/accounts', icon: FolderKanban },
         { name: 'User Management', href: '/user-management', icon: Settings },
@@ -62,14 +64,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                                         }
                                     }}
                                     className={({ isActive }) =>
-                                        `flex items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95 ${isActive
-                                            ? 'bg-sky-50 dark:bg-primary/20 text-primary dark:text-sky-300 shadow-sm'
-                                            : 'text-textMuted dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50 hover:text-textMain dark:hover:text-white'
+                                        `flex items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95 ${
+                                            isActive
+                                                ? 'bg-sky-50 dark:bg-primary/20 text-primary dark:text-sky-300 shadow-sm'
+                                                : 'text-textMuted dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50 hover:text-textMain dark:hover:text-white'
                                         }`
                                     }
                                 >
-                                    <Icon className={`mr-4 h-5 w-5 flex-shrink-0 transition-colors ${({ isActive }) => isActive ? 'text-primary' : 'text-gray-400'}`} />
-                                    {item.name}
+                                    {({ isActive }) => (
+                                        <>
+                                            <Icon className={`mr-4 h-5 w-5 flex-shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-gray-400'}`} />
+                                            {item.name}
+                                        </>
+                                    )}
                                 </NavLink>
                             );
                         })}

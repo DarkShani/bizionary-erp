@@ -21,24 +21,8 @@ const CustomersTab = () => {
                     setCustomers(res.data.data);
                 }
             } catch (error) {
-                console.warn('Failed to fetch customers, using mock data.');
-                setCustomers([
-                    {
-                        id: 1, full_name: 'Ahmed Khan', email: 'ahmed@example.com', phone: '0300-1234567',
-                        loyalty_tier: 'VIP', is_vip: true, lifetime_value: 245000, 
-                        last_purchase_date: '2023-11-20', churn_risk_score: 15, is_at_risk: false
-                    },
-                    {
-                        id: 2, full_name: 'Sara Ali', email: 'sara@example.com', phone: '0321-7654321',
-                        loyalty_tier: 'REGULAR', is_vip: false, lifetime_value: 18000, 
-                        last_purchase_date: '2023-09-05', churn_risk_score: 85, is_at_risk: true
-                    },
-                    {
-                        id: 3, full_name: 'Zainab Ahmed', email: 'zainab@example.com', phone: '0333-1122334',
-                        loyalty_tier: 'NEW', is_vip: false, lifetime_value: 4500, 
-                        last_purchase_date: '2023-11-28', churn_risk_score: 5, is_at_risk: false
-                    }
-                ]);
+                console.warn('Failed to fetch customers.');
+                setCustomers([]);
             } finally {
                 setLoading(false);
             }

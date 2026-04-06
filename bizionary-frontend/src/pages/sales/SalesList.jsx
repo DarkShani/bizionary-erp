@@ -25,48 +25,28 @@ const SalesList = () => {
             // Ensure date sorting or transformations if needed
             setSales(data);
         } catch (error) {
-            console.warn("Failed to fetch sales from backend, using mock data for demo.");
-            // Fallback Mock Data
-            setSales([
-                { id: 1, product: 1, product_name: 'A4 Copy Paper 80 GSM', customer_name: 'Tech Solutions Inc', quantity_sold: 50, unit_price: 1500, total_price: 75000, sale_date: '2024-05-15' },
-                { id: 2, product: 2, product_name: 'Office Chair Exec', customer_name: 'Startup Hub', quantity_sold: 4, unit_price: 18000, total_price: 72000, sale_date: '2024-05-16' },
-                { id: 3, product: 3, product_name: 'Wireless Mouse', customer_name: 'Freelancer Co', quantity_sold: 10, unit_price: 2500, total_price: 25000, sale_date: '2024-05-16' },
-                { id: 4, product: 4, product_name: 'Stapler Pro', customer_name: 'Local School', quantity_sold: 25, unit_price: 450, total_price: 11250, sale_date: '2024-05-17' },
-                { id: 5, product: 5, product_name: 'Printer Ink Black', customer_name: 'Tech Solutions Inc', quantity_sold: 2, unit_price: 3500, total_price: 7000, sale_date: '2024-05-18' },
-            ]);
+            console.warn('Failed to fetch sales from backend.');
+            setSales([]);
         } finally {
             setLoading(false);
         }
     };
 
     const handleCreateOrUpdate = async (saleData) => {
-        try {
-            if (currentSale) {
-                // Update
-                // await api.put(`sales/${currentSale.id}/`, saleData);
-                // The mock logic below manually calculates total_price if the backend isn't there
-                const updatedObj = { ...currentSale, ...saleData, total_price: saleData.quantity_sold * saleData.unit_price };
-                setSales(prev => prev.map(s => s.id === currentSale.id ? updatedObj : s));
-            } else {
-                // Create
-                // const res = await api.post('sales/', saleData);
-                // setSales([...sales, res.data]);
-
-                // Mock Add
-                const newObj = { ...saleData, id: Date.now(), total_price: saleData.quantity_sold * saleData.unit_price, sale_date: new Date().toISOString().split('T')[0] };
-                setSales(prev => [newObj, ...prev]);
-            }
-            setIsFormOpen(false);
-            setCurrentSale(null);
-        } catch (error) {
-            alert("Failed to save sale.");
+        if (currentSale) {
+            await api.put(`sales/${currentSale.id}/`, saleData);
+        } else {
+            await api.post('sales/', saleData);
         }
+        await fetchSales();
+        setIsFormOpen(false);
+        setCurrentSale(null);
     };
 
     const handleDelete = async (id) => {
         try {
-            // await api.delete(`sales/${id}/`);
-            setSales(prev => prev.filter(s => s.id !== id));
+            await api.delete(`sales/${id}/`);
+            await fetchSales();
         } catch (error) {
             alert("Failed to delete sale.");
         }
@@ -137,6 +117,7 @@ const SalesList = () => {
                                     <th className="px-6 py-4 font-semibold">Customer</th>
                                     <th className="px-6 py-4 font-semibold">Product</th>
                                     <th className="px-6 py-4 font-semibold text-center">Qty</th>
+                                    <th className="px-6 py-4 font-semibold text-center">Remaining</th>
                                     <th className="px-6 py-4 font-semibold text-right">Total Price</th>
                                     <th className="px-6 py-4 font-semibold text-center">Actions</th>
                                 </tr>
@@ -152,6 +133,9 @@ const SalesList = () => {
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-50 text-sky-700 border border-sky-100">
                                                 {s.quantity_sold}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-xs font-semibold text-textMuted">
+                                            {s.remaining_stock ?? 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 font-bold text-success text-right">{formatPKR(s.total_price)}</td>
                                         <td className="px-6 py-4 text-center">
@@ -176,7 +160,7 @@ const SalesList = () => {
                                 ))}
                                 {filteredSales.length === 0 && (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-12 text-center text-textMuted">
+                                        <td colSpan="8" className="px-6 py-12 text-center text-textMuted">
                                             <Receipt className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                                             <p>No sales records found.</p>
                                         </td>

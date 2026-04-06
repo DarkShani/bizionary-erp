@@ -18,11 +18,8 @@ const RevenuesTab = ({ refreshTrigger, onEdit, triggerRefresh }) => {
                     setRevenues(res.data); // in case backend response structure differs
                 }
             } catch (error) {
-                console.warn('Failed to fetch revenues, using mock data.');
-                setRevenues([
-                    { id: 1, source: 'Product Sales', amount: 450000, date: '2023-10-24', description: 'Monthly bulk sale' },
-                    { id: 2, source: 'Consulting', amount: 120000, date: '2023-10-25', description: 'IT implementation' }
-                ]);
+                console.warn('Failed to fetch revenues.');
+                setRevenues([]);
             } finally {
                 setLoading(false);
             }
@@ -34,11 +31,6 @@ const RevenuesTab = ({ refreshTrigger, onEdit, triggerRefresh }) => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this revenue record?')) {
             try {
-                 // Check if mock data
-                if (revenues.length > 0 && revenues[0].source === 'Product Sales' && id <= 2) {
-                     setRevenues(revenues.filter(r => r.id !== id));
-                     return;
-                }
                 await accountsApi.deleteRevenue(id);
                 triggerRefresh();
             } catch (error) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X } from 'lucide-react';
 
-const ProductForm = ({ isOpen, onClose, onSubmit, initialData }) => {
+const ProductForm = ({ isOpen, onClose, onSubmit, initialData, submitting = false, errorMessage = '' }) => {
     const isEditing = !!initialData;
     const [formData, setFormData] = useState({
         name: '',
@@ -44,7 +44,7 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData }) => {
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+        <Dialog open={isOpen} onClose={submitting ? () => {} : onClose} className="relative z-50">
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
             <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -53,7 +53,7 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                         <Dialog.Title className="text-xl font-bold text-primary">
                             {isEditing ? 'Edit Product' : 'Add New Product'}
                         </Dialog.Title>
-                        <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50">
+                        <button onClick={onClose} disabled={submitting} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 disabled:opacity-50">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -152,19 +152,27 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                         </div>
 
+                        {errorMessage && (
+                            <div className="p-3 rounded-lg border border-rose-100 bg-rose-50 text-rose-700 text-sm">
+                                {errorMessage}
+                            </div>
+                        )}
+
                         <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-50">
                             <button
                                 type="button"
                                 onClick={onClose}
+                                disabled={submitting}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-secondary transition-colors"
+                                disabled={submitting}
+                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-secondary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                {isEditing ? 'Save Changes' : 'Add Product'}
+                                {submitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Add Product')}
                             </button>
                         </div>
                     </form>

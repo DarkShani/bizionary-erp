@@ -1,32 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Package, AlertCircle } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { formatPKR } from '../../../utils/currency';
+import api from '../../../services/api';
 
 const StocksTab = () => {
     const [stocks, setStocks] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Mock dataset since explicit backend for stocks wasn't provided yet
-        setTimeout(() => {
-            setStocks([
-                { id: 101, sku: 'TECH-LAP-01', name: 'MacBook Pro 14"', category: 'Electronics', quantity: 24, low_stock_threshold: 10, unit_price: 450000, value: 10800000 },
-                { id: 102, sku: 'OFF-CHR-05', name: 'Ergonomic Office Chair', category: 'Furniture', quantity: 8, low_stock_threshold: 15, unit_price: 35000, value: 280000 },
-                { id: 103, sku: 'STAT-PAP-A4', name: 'A4 Printer Paper (Box)', category: 'Stationery', quantity: 145, low_stock_threshold: 50, unit_price: 4500, value: 652500 },
-                { id: 104, sku: 'TECH-MOU-02', name: 'Wireless Mouse', category: 'Accessories', quantity: 4, low_stock_threshold: 20, unit_price: 2500, value: 10000 }
-            ]);
-            setLoading(false);
-        }, 800);
+        const fetchStocks = async () => {
+            try {
+                setLoading(true);
+                const res = await api.get('products/');
+                const products = res.data?.data || res.data || [];
+
+                setStocks(products.map((item) => ({
+                    id: item.id,
+                    sku: item.sku,
+                    name: item.name,
+                    category: item.category,
+                    quantity: item.stock_quantity,
+                    low_stock_threshold: item.reorder_level,
+                    unit_price: item.unit_price,
+                    value: Number(item.stock_quantity || 0) * Number(item.unit_price || 0),
+                })));
+            } catch (error) {
+                console.warn('Failed to fetch stock data from products API.');
+                setStocks([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStocks();
     }, []);
 
     if (loading) return <div className="text-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div></div>;
 
     return (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
-            <div className="p-4 bg-amber-50 border-b border-amber-100 flex items-center gap-3 text-amber-800">
-                <AlertCircle className="w-5 h-5" />
-                <p className="text-sm font-medium"><strong>Notice:</strong> This is a mock inventory table. Connect to the real products API when available.</p>
-            </div>
             <table className="w-full text-left border-collapse">
                 <thead>
                     <tr className="bg-slate-50 border-b border-gray-100">
@@ -38,6 +50,11 @@ const StocksTab = () => {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
+                    {stocks.length === 0 && (
+                        <tr>
+                            <td colSpan="5" className="px-6 py-8 text-center text-textMuted text-sm">No stock records found.</td>
+                        </tr>
+                    )}
                     {stocks.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-6 py-4">

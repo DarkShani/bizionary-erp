@@ -7,6 +7,8 @@ from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
 from decimal import Decimal
 from .models import Revenue, Expense, Invoice
+from sales.models import Sale
+from purchases.models import Purchase
 
 
 class AccountsService:
@@ -17,19 +19,19 @@ class AccountsService:
     @staticmethod
     def total_revenue():
         """
-        Calculate total revenue from all sources
+        Calculate total revenue from operational sales data
         Returns: Decimal
         """
-        result = Revenue.objects.aggregate(total=Sum('amount'))
+        result = Sale.objects.aggregate(total=Sum('total_price'))
         return result['total'] or Decimal('0.00')
 
     @staticmethod
     def total_expense():
         """
-        Calculate total expenses across all categories
+        Calculate total expenses from operational purchases data
         Returns: Decimal
         """
-        result = Expense.objects.aggregate(total=Sum('amount'))
+        result = Purchase.objects.aggregate(total=Sum('total_cost'))
         return result['total'] or Decimal('0.00')
 
     @staticmethod

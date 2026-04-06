@@ -20,16 +20,16 @@ const CustomersAndStocks = () => {
                     setKpis(res.data);
                 }
             } catch (error) {
-                console.warn('Failed to fetch KPIs, using mock data.');
+                console.warn('Failed to fetch customer analytics KPIs.');
                 setKpis({
-                    total_customers: 1240,
-                    total_customers_change: 5.2,
-                    retention_rate: 85.5,
-                    retention_rate_change: 1.1,
-                    avg_lifetime_value: 45000,
-                    avg_lifetime_value_change: 2.3,
-                    churn_risk_percentage: 12.4,
-                    churn_risk_change: -0.5
+                    total_customers: 0,
+                    total_customers_change: 0,
+                    retention_rate: 0,
+                    retention_rate_change: 0,
+                    avg_lifetime_value: 0,
+                    avg_lifetime_value_change: 0,
+                    churn_risk_percentage: 0,
+                    churn_risk_change: 0
                 });
             } finally {
                 setLoadingKpis(false);

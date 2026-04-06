@@ -5,7 +5,7 @@ import {
 import { formatPKR } from '../../utils/currency';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Laptop, Smartphone, Printer, Receipt } from 'lucide-react';
+import { Wallet, Package, AlertTriangle, Receipt } from 'lucide-react';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -13,62 +13,78 @@ const Dashboard = () => {
     const [data, setData] = useState({
         kpis: null,
         monthlyRevenue: [],
-        topProducts: [],
+        outstandingInvoices: [],
         recentSales: [],
         lowStock: []
     });
 
     useEffect(() => {
+        const normalizeKpis = (raw = {}) => ({
+            total_revenue: raw.total_revenue ?? 0,
+            total_purchases_value: raw.total_purchases_value ?? 0,
+            inventory_value: raw.total_inventory_value ?? 0,
+            total_products: raw.total_products ?? 0,
+            unpaid_invoices_count: raw.unpaid_invoices ?? 0,
+            low_stock_count: raw.low_stock_count ?? 0,
+            total_invoices: raw.total_invoices ?? 0,
+        });
+
         const fetchDashboardData = async () => {
             try {
-                const [kpisRes, revenueRes, productsRes, salesRes, stockRes] = await Promise.all([
+                const [kpisRes, revenueRes, salesRes, stockRes, outstandingRes] = await Promise.allSettled([
                     api.get('dashboard/kpis/'),
                     api.get('dashboard/monthly-revenue/'),
-                    api.get('dashboard/top-products/'),
                     api.get('dashboard/recent-sales/'),
-                    api.get('dashboard/low-stock-products/')
+                    api.get('dashboard/low-stock-products/'),
+                    api.get('dashboard/outstanding-invoices/')
                 ]);
 
-                setData({
-                    kpis: kpisRes.data,
-                    monthlyRevenue: revenueRes.data,
-                    topProducts: productsRes.data,
-                    recentSales: salesRes.data,
-                    lowStock: stockRes.data
-                });
-            } catch (error) {
-                console.warn('Backend API failed, using mock data for AI Dashboard layout');
+                const endpointResults = [
+                    ['dashboard/kpis/', kpisRes],
+                    ['dashboard/monthly-revenue/', revenueRes],
+                    ['dashboard/recent-sales/', salesRes],
+                    ['dashboard/low-stock-products/', stockRes],
+                    ['dashboard/outstanding-invoices/', outstandingRes],
+                ];
+
+                const outstandingInvoices = outstandingRes.status === 'fulfilled' ? outstandingRes.value.data : [];
+                const unpaidInvoicesAmount = outstandingInvoices.reduce(
+                    (sum, invoice) => sum + Number(invoice.balance ?? 0),
+                    0
+                );
 
                 setData({
                     kpis: {
-                        total_revenue: 345670500,
-                        account_balance: 84200000,
-                        inventory_value: 12450000,
-                        total_products: 340,
-                        unpaid_invoices_amount: 4235000,
-                        unpaid_invoices_count: 12
+                        ...normalizeKpis(kpisRes.status === 'fulfilled' ? kpisRes.value.data : {}),
+                        unpaid_invoices_amount: unpaidInvoicesAmount,
                     },
-                    monthlyRevenue: [
-                        { month: 'JUL', revenue: 120000 },
-                        { month: 'AUG', revenue: 150000 },
-                        { month: 'SEP', revenue: 130000 },
-                        { month: 'OCT', revenue: 180000 },
-                        { month: 'NOV', revenue: 160000 },
-                        { month: 'DEC', revenue: 210000 },
-                    ],
-                    topProducts: [
-                        { product_name: 'A4 Copy Paper', quantity_sold: 500, total_revenue: 25000 },
-                    ],
-                    recentSales: [
-                        { sale_id: 982, invoice_number: 'INV-0982', total_price: 45000, sale_date: 'Oct 24' },
-                        { sale_id: 983, invoice_number: 'INV-0983', total_price: 128000, sale_date: 'Oct 22' },
-                        { sale_id: 984, invoice_number: 'INV-0984', total_price: 72000, sale_date: 'Oct 19' },
-                    ],
-                    lowStock: [
-                        { product_id: 5, product_name: 'Laptops', sku: 'TECH-LAP-01', stock_quantity: 84, inventory_value: 8400000 },
-                        { product_id: 12, product_name: 'Smartphones', sku: 'TECH-PHN-02', stock_quantity: 12, inventory_value: 1200000, isReorder: true },
-                        { product_id: 15, product_name: 'Supplies', sku: 'OFF-SUP-01', stock_quantity: 244, inventory_value: 400000 },
-                    ]
+                    monthlyRevenue: revenueRes.status === 'fulfilled' ? revenueRes.value.data : [],
+                    outstandingInvoices,
+                    recentSales: salesRes.status === 'fulfilled' ? salesRes.value.data : [],
+                    lowStock: stockRes.status === 'fulfilled' ? stockRes.value.data : []
+                });
+
+                if ([kpisRes, revenueRes, salesRes, stockRes, outstandingRes].some(r => r.status === 'rejected')) {
+                    console.warn('Some dashboard endpoints failed; rendered available data only.');
+                }
+            } catch (error) {
+                console.warn('Dashboard API calls failed, rendering empty state values.');
+
+                setData({
+                    kpis: {
+                        total_revenue: 0,
+                        total_purchases_value: 0,
+                        inventory_value: 0,
+                        total_products: 0,
+                        unpaid_invoices_amount: 0,
+                        unpaid_invoices_count: 0,
+                        low_stock_count: 0,
+                        total_invoices: 0,
+                    },
+                    monthlyRevenue: [],
+                    outstandingInvoices: [],
+                    recentSales: [],
+                    lowStock: []
                 });
             } finally {
                 setLoading(false);
@@ -82,7 +98,13 @@ const Dashboard = () => {
         return <div className="min-h-[60vh] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
     }
 
-    const { kpis, monthlyRevenue, recentSales, lowStock } = data;
+    const { kpis, monthlyRevenue, outstandingInvoices, recentSales, lowStock } = data;
+
+    const latestRevenue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue ?? 0;
+    const totalOutstandingAmount = outstandingInvoices.reduce(
+        (sum, invoice) => sum + Number(invoice.balance ?? 0),
+        0
+    );
 
     // Custom Tooltip for Area Chart
     const CustomTooltip = ({ active, payload, label }) => {
@@ -105,7 +127,7 @@ const Dashboard = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-extrabold text-textMain">Business Overview</h1>
-                    <p className="text-textMuted text-sm mt-1">Welcome back, Ali. Here is your current business performance summary.</p>
+                    <p className="text-textMuted text-sm mt-1">Live business snapshot from your current ERP data.</p>
                 </div>
             </div>
 
@@ -117,17 +139,17 @@ const Dashboard = () => {
                     <div className="flex flex-col items-start justify-between mt-3 gap-2">
                         <h3 className="text-2xl font-extrabold text-slate-900">{formatPKR(kpis.total_revenue)}</h3>
                         <span className="text-emerald-600 text-xs font-bold flex items-center justify-center bg-emerald-50 px-2 py-1 rounded-full w-max">
-                            <span className="material-symbols-outlined !text-xs mr-0.5">trending_up</span>+5.2%
+                            Latest month: {formatPKR(latestRevenue)}
                         </span>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
-                    <p className="text-textMuted text-sm font-medium">Account Balance</p>
+                <div onClick={() => navigate('/purchases')} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
+                    <p className="text-textMuted text-sm font-medium">Total Purchases</p>
                     <div className="flex flex-col items-start justify-between mt-3 gap-2">
-                        <h3 className="text-2xl font-extrabold text-slate-900">{formatPKR(kpis.account_balance)}</h3>
-                        <span className="text-emerald-600 text-xs font-bold flex items-center justify-center bg-emerald-50 px-2 py-1 rounded-full w-max">
-                            <span className="material-symbols-outlined !text-xs mr-0.5">trending_up</span>+1.1%
+                        <h3 className="text-2xl font-extrabold text-slate-900">{formatPKR(kpis.total_purchases_value)}</h3>
+                        <span className="text-amber-600 text-xs font-bold flex items-center justify-center bg-amber-50 px-2 py-1 rounded-full w-max">
+                            {kpis.total_invoices} Total Invoices
                         </span>
                     </div>
                 </div>
@@ -145,7 +167,7 @@ const Dashboard = () => {
                 <div onClick={() => navigate('/invoices')} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
                     <p className="text-textMuted text-sm font-medium">Outstanding Invoices</p>
                     <div className="flex flex-col items-start justify-between mt-3 gap-2">
-                        <h3 className="text-2xl font-extrabold text-slate-900">{formatPKR(kpis.unpaid_invoices_amount)}</h3>
+                        <h3 className="text-2xl font-extrabold text-slate-900">{formatPKR(totalOutstandingAmount)}</h3>
                         <span className="text-rose-600 text-xs font-bold flex items-center justify-center bg-rose-50 px-2 py-1 rounded-full w-max">
                             <span className="material-symbols-outlined !text-xs mr-0.5">error</span>{kpis.unpaid_invoices_count} Overdue
                         </span>
@@ -153,11 +175,11 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Middle Section: Chart & AI Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Middle Section: Chart */}
+            <div className="grid grid-cols-1 gap-6">
 
                 {/* Recharts Area Flow (Dynamic replacement for HTML SVG) */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
+                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h4 className="font-bold text-lg">Sales Performance (Rs.)</h4>
@@ -168,10 +190,9 @@ const Dashboard = () => {
                                 <span className="w-2 h-2 rounded-full bg-primary"></span>
                                 <span className="text-[10px] text-textMuted font-bold">Revenue (Rs.)</span>
                             </div>
-                            <select className="bg-slate-50 border-none rounded-lg text-xs font-bold py-1.5 px-3 outline-none">
-                                <option>Last 6 Months</option>
-                                <option>Last Year</option>
-                            </select>
+                            <span className="bg-slate-50 rounded-lg text-xs font-bold py-1.5 px-3">
+                                {monthlyRevenue.length} Data Points
+                            </span>
                         </div>
                     </div>
 
@@ -214,43 +235,6 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* AI Smart Insights */}
-                <div className="bg-white p-6 rounded-xl border border-primary/20 shadow-sm flex flex-col relative overflow-hidden">
-                    <div className="absolute -right-4 -top-4 w-24 h-24 ai-gradient opacity-5 rounded-full blur-2xl"></div>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <div className="ai-gradient p-1.5 rounded-lg text-white flex items-center justify-center">
-                                <span className="material-symbols-outlined !text-lg">auto_awesome</span>
-                            </div>
-                            <h4 className="font-bold text-lg text-textMain">AI Smart Insights</h4>
-                        </div>
-                        <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded uppercase">Live</span>
-                    </div>
-
-                    <div className="space-y-4 flex-1 mt-2">
-                        <div className="flex gap-3 p-3 bg-slate-50 rounded-lg border-l-4 border-primary">
-                            <span className="material-symbols-outlined text-primary !text-lg shrink-0">trending_up</span>
-                            <p className="text-xs text-textMain leading-relaxed font-medium">Sales are projected to increase by <span className="text-primary font-bold">10%</span> next month based on current trends.</p>
-                        </div>
-
-                        <div className="flex gap-3 p-3 bg-slate-50 rounded-lg border-l-4 border-rose-500">
-                            <span className="material-symbols-outlined text-rose-500 !text-lg shrink-0">warning</span>
-                            <p className="text-xs text-textMain leading-relaxed font-medium"><span className="text-rose-500 font-bold">Low stock alert</span> for Office Supplies. Current rate of consumption exceeds supply.</p>
-                        </div>
-
-                        <div className="flex gap-3 p-3 bg-slate-50 rounded-lg border-l-4 border-emerald-500">
-                            <span className="material-symbols-outlined text-emerald-500 !text-lg shrink-0">payments</span>
-                            <p className="text-xs text-textMain leading-relaxed font-medium">Potential to save <span className="text-emerald-600 font-bold">Rs. 25,000</span> by switching to bulk vendor payments.</p>
-                        </div>
-                    </div>
-
-                    <button 
-                        onClick={() => navigate('/ai-chat')}
-                        className="mt-6 w-full py-2 ai-gradient text-white rounded-lg text-xs font-bold transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/40"
-                    >
-                        Ask Bizzionary AI
-                    </button>
-                </div>
             </div>
 
             {/* Bottom 3 Widgets */}
@@ -267,27 +251,27 @@ const Dashboard = () => {
                         <div className="flex flex-col gap-1 w-full">
                             <div className="flex justify-between items-center text-xs font-bold w-full">
                                 <span className="text-textMuted text-left">Inflow (Current Month)</span>
-                                <span className="text-emerald-600 text-right">Rs. 12,450,000</span>
+                                <span className="text-emerald-600 text-right">{formatPKR(latestRevenue)}</span>
                             </div>
                             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div className="bg-emerald-500 h-full w-[75%]"></div>
+                                <div className="bg-emerald-500 h-full" style={{ width: `${Math.min(100, latestRevenue > 0 ? 70 : 0)}%` }}></div>
                             </div>
                         </div>
 
                         <div className="flex flex-col gap-1 mt-4 w-full">
                             <div className="flex justify-between items-center text-xs font-bold w-full">
                                 <span className="text-textMuted text-left">Outflow (Current Month)</span>
-                                <span className="text-rose-600 text-right">Rs. 8,120,000</span>
+                                <span className="text-rose-600 text-right">{formatPKR(kpis.total_purchases_value)}</span>
                             </div>
                             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div className="bg-rose-500 h-full w-[45%]"></div>
+                                <div className="bg-rose-500 h-full" style={{ width: `${Math.min(100, kpis.total_purchases_value > 0 ? 55 : 0)}%` }}></div>
                             </div>
                         </div>
 
                         <div className="mt-6 p-4 rounded-lg bg-slate-50 border border-slate-200">
                             <p className="text-xs text-textMuted font-medium">Net Position</p>
-                            <p className="text-xl font-extrabold text-primary pt-1">Rs. 4,330,000</p>
-                            <p className="text-[10px] text-emerald-600 font-bold mt-1">+12% vs last month</p>
+                            <p className="text-xl font-extrabold text-primary pt-1">{formatPKR(latestRevenue - Number(kpis.total_purchases_value || 0))}</p>
+                            <p className="text-[10px] text-emerald-600 font-bold mt-1">Computed from monthly revenue and total purchases</p>
                         </div>
                     </div>
 
@@ -312,17 +296,20 @@ const Dashboard = () => {
                     </div>
 
                     <div className="space-y-3">
+                        {lowStock.length === 0 && (
+                            <div className="p-4 border border-dashed border-gray-200 rounded-lg text-center text-sm text-textMuted">
+                                No inventory items available yet.
+                            </div>
+                        )}
                         {lowStock.map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-primary/10 rounded flex flex-shrink-0 items-center justify-center text-primary">
-                                        {item.product_name.includes('Lap') ? <Laptop className="w-5 h-5" /> :
-                                         item.product_name.includes('Smart') ? <Smartphone className="w-5 h-5" /> : 
-                                         <Printer className="w-5 h-5" />}
+                                        {item.isReorder ? <AlertTriangle className="w-5 h-5" /> : <Package className="w-5 h-5" />}
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-sm font-bold truncate">{item.product_name}</p>
-                                        <p className="text-[10px] text-textMuted">{item.stock_quantity} Units</p>
+                                        <p className="text-[10px] text-textMuted">{item.stock_quantity} Units • {item.sku}</p>
                                     </div>
                                 </div>
                                 <div className="text-right flex-shrink-0 ml-2">
@@ -350,15 +337,18 @@ const Dashboard = () => {
                                 <div className="flex items-center gap-3">
                                     <Receipt className="w-5 h-5 text-primary flex-shrink-0" />
                                     <div className="min-w-0">
-                                        <p className="text-sm font-semibold truncate">{sale.invoice_number}</p>
+                                        <p className="text-sm font-semibold truncate">Sale #{sale.sale_id} - {sale.customer_name}</p>
                                         <p className="text-[10px] text-textMuted">{sale.sale_date}</p>
                                     </div>
                                 </div>
-                                <p className={`text-sm font-bold flex-shrink-0 ml-2 whitespace-nowrap ${idx === 1 ? 'text-amber-600' : 'text-textMain'}`}>
+                                <p className="text-sm font-bold flex-shrink-0 ml-2 whitespace-nowrap text-textMain">
                                     {formatPKR(sale.total_price)}
                                 </p>
                             </div>
                         ))}
+                        {recentSales.length === 0 && (
+                            <div className="text-sm text-textMuted">No recent sales found.</div>
+                        )}
                     </div>
                 </div>
 

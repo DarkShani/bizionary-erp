@@ -7,11 +7,15 @@ import ProductForm from './ProductForm';
 const ProductList = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError] = useState('');
+    const [formSuccess, setFormSuccess] = useState('');
 
     // UI States
     const [searchTerm, setSearchTerm] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [currentProduct, setCurrentProduct] = useState(null);
+    const [newlyCreatedProductId, setNewlyCreatedProductId] = useState(null);
 
     useEffect(() => {
         fetchProducts();
@@ -23,56 +27,80 @@ const ProductList = () => {
             const res = await api.get('products/');
             setProducts(res.data.data || res.data); // handles {data: []} or just []
         } catch (error) {
-            console.warn("Failed to fetch products from backend, using mock data for demo.");
-            // Fallback Mock Data
-            setProducts([
-                { id: 1, name: 'A4 Copy Paper 80 GSM', sku: 'PAP-A4-80', stock_quantity: 500, reorder_level: 100, unit_price: 1500, category: 'Office Supplies' },
-                { id: 2, name: 'Office Chair Exec', sku: 'FURN-CHR-01', stock_quantity: 15, reorder_level: 5, unit_price: 18000, category: 'Furniture' },
-                { id: 3, name: 'Wireless Mouse', sku: 'TECH-MOU-W', stock_quantity: 45, reorder_level: 20, unit_price: 2500, category: 'Electronics' },
-                { id: 4, name: 'Stapler Pro', sku: 'OFF-STP-01', stock_quantity: 120, reorder_level: 50, unit_price: 450, category: 'Office Supplies' },
-                { id: 5, name: 'Printer Ink Black', sku: 'INK-BLK-01', stock_quantity: 8, reorder_level: 20, unit_price: 3500, category: 'Electronics' },
-            ]);
+            console.warn('Failed to fetch products from backend.');
+            setProducts([]);
         } finally {
             setLoading(false);
         }
     };
 
+    const formatApiError = (error, fallbackMessage) => {
+        const payload = error?.response?.data;
+        if (!payload) {
+            return fallbackMessage;
+        }
+
+        if (typeof payload === 'string') {
+            return payload;
+        }
+
+        if (Array.isArray(payload)) {
+            return payload.join(', ');
+        }
+
+        if (payload.detail) {
+            return payload.detail;
+        }
+
+        const firstField = Object.keys(payload)[0];
+        if (firstField && Array.isArray(payload[firstField])) {
+            return `${firstField}: ${payload[firstField].join(', ')}`;
+        }
+
+        return fallbackMessage;
+    };
+
     const handleCreateOrUpdate = async (productData) => {
+        setSubmitting(true);
+        setFormError('');
+        setFormSuccess('');
         try {
             if (currentProduct) {
-                // Update
-                // await api.put(`products/${currentProduct.id}/`, productData);
-                setProducts(prev => prev.map(p => p.id === currentProduct.id ? { ...p, ...productData } : p));
+                await api.put(`products/${currentProduct.id}/`, productData);
+                setFormSuccess('Product updated successfully.');
             } else {
-                // Create
-                // const res = await api.post('products/', productData);
-                // setProducts([...products, res.data]);
-
-                // Mock Add
-                setProducts(prev => [{ ...productData, id: Date.now() }, ...prev]);
+                const created = await api.post('products/', productData);
+                setNewlyCreatedProductId(created?.data?.id ?? null);
+                setFormSuccess('Product created successfully.');
             }
+            await fetchProducts();
             setIsFormOpen(false);
             setCurrentProduct(null);
         } catch (error) {
-            alert("Failed to save product.");
+            setFormError(formatApiError(error, 'Failed to save product.'));
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const handleDelete = async (id) => {
         try {
-            // await api.delete(`products/${id}/`);
-            setProducts(prev => prev.filter(p => p.id !== id));
+            await api.delete(`products/${id}/`);
+            await fetchProducts();
+            setFormSuccess('Product deleted successfully.');
         } catch (error) {
-            alert("Failed to delete product.");
+            setFormError(formatApiError(error, 'Failed to delete product.'));
         }
     };
 
     const openAddForm = () => {
+        setFormError('');
         setCurrentProduct(null);
         setIsFormOpen(true);
     };
 
     const openEditForm = (item) => {
+        setFormError('');
         setCurrentProduct(item);
         setIsFormOpen(true);
     };
@@ -115,6 +143,17 @@ const ProductList = () => {
                 </div>
             </div>
 
+            {formSuccess && (
+                <div className="px-4 py-3 rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-700 text-sm font-medium">
+                    {formSuccess}
+                </div>
+            )}
+            {formError && (
+                <div className="px-4 py-3 rounded-xl border border-rose-100 bg-rose-50 text-rose-700 text-sm font-medium">
+                    {formError}
+                </div>
+            )}
+
             {/* Main Table */}
             <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
                 {loading ? (
@@ -132,14 +171,19 @@ const ProductList = () => {
                                     <th className="px-6 py-4 font-semibold text-right">Unit Price</th>
                                     <th className="px-6 py-4 font-semibold text-center">Stock</th>
                                     <th className="px-6 py-4 font-semibold text-center">Reorder Lvl</th>
+                                    <th className="px-6 py-4 font-semibold text-center">Created In DB</th>
                                     <th className="px-6 py-4 font-semibold text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {filteredProducts.map((p) => {
                                     const isLowStock = p.stock_quantity <= p.reorder_level;
+                                    const isNewlyCreated = newlyCreatedProductId === p.id;
+                                    const createdAtLabel = p.created_at
+                                        ? new Date(p.created_at).toLocaleString()
+                                        : 'N/A';
                                     return (
-                                        <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                        <tr key={p.id} className={`hover:bg-slate-50 transition-colors ${isNewlyCreated ? 'bg-emerald-50/60' : ''}`}>
                                             <td className="px-6 py-4 whitespace-nowrap text-textMuted font-mono text-xs">{p.sku}</td>
                                             <td className="px-6 py-4 font-bold text-textMain">{p.name}</td>
                                             <td className="px-6 py-4 text-textMuted">{p.category || 'N/A'}</td>
@@ -150,6 +194,15 @@ const ProductList = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-center text-textMuted font-medium">{p.reorder_level}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                {isNewlyCreated ? (
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                        Created in DB
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-textMuted">{createdAtLabel}</span>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4 text-center">
                                                 <div className="flex items-center justify-center gap-3">
                                                     <button
@@ -173,7 +226,7 @@ const ProductList = () => {
                                 })}
                                 {filteredProducts.length === 0 && (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-12 text-center text-textMuted">
+                                        <td colSpan="8" className="px-6 py-12 text-center text-textMuted">
                                             <Search className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                                             <p>No products found matching your search.</p>
                                         </td>
@@ -191,6 +244,8 @@ const ProductList = () => {
                 onClose={() => setIsFormOpen(false)}
                 onSubmit={handleCreateOrUpdate}
                 initialData={currentProduct}
+                submitting={submitting}
+                errorMessage={formError}
             />
         </div>
     );

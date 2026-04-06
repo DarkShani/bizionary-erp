@@ -28,12 +28,12 @@ const AccountsManager = () => {
                     setKpis(res.data.data);
                 }
             } catch (error) {
-                console.warn('Failed to fetch KPIs, using mock data.');
+                console.warn('Failed to fetch accounts KPIs.');
                 setKpis({
-                    total_revenue: 12450000,
-                    total_expense: 8120000,
-                    net_profit: 4330000,
-                    cash_flow: 4330000
+                    total_revenue: 0,
+                    total_expense: 0,
+                    net_profit: 0,
+                    cash_flow: 0
                 });
             } finally {
                 setLoadingKpis(false);

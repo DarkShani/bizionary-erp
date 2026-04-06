@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from .models import Sale
 from .serializers import SaleSerializer
 
@@ -35,5 +36,9 @@ def sale_detail(request, pk):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    sale.delete()
+    with transaction.atomic():
+        product = sale.product
+        product.stock_quantity += sale.quantity_sold
+        product.save(update_fields=['stock_quantity', 'updated_at'])
+        sale.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)

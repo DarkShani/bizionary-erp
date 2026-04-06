@@ -16,39 +16,19 @@ const UserManagement = () => {
         try {
             setLoading(true);
             const [usersRes, rolesRes, deptsRes] = await Promise.all([
-                userManagementApi.getUsers().catch(() => ({ data: { data: [] } })),
-                userManagementApi.getRoles().catch(() => ({ data: { data: [] } })),
-                userManagementApi.getDepartments().catch(() => ({ data: { data: [] } }))
+                userManagementApi.getUsers(),
+                userManagementApi.getRoles(),
+                userManagementApi.getDepartments()
             ]);
             
             setUsers(usersRes.data?.data || []);
             setRoles(rolesRes.data?.data || []);
             setDepartments(deptsRes.data?.data || []);
-
-            // Temporary mock data for UI testing if the API returns an empty array
-            if (!usersRes.data?.data || usersRes.data.data.length === 0) {
-                setUsers([
-                    { id: 1, username: 'admin', email: 'admin@bizionary.com', first_name: 'Admin', last_name: 'User', role_name: 'Super Admin', department_name: 'IT & Systems', status: 'ACTIVE' },
-                    { id: 2, username: 'jdoe', email: 'jdoe@bizionary.com', first_name: 'John', last_name: 'Doe', role_name: 'General Manager', department_name: 'Operations', status: 'INACTIVE' }
-                ]);
-                setRoles([
-                    { id: 1, name: 'Super Admin' },
-                    { id: 2, name: 'General Manager' },
-                    { id: 3, name: 'Sales Representative' },
-                    { id: 4, name: 'HR Manager' },
-                    { id: 5, name: 'Finance Officer' },
-                    { id: 6, name: 'Inventory Clerk' }
-                ]);
-                setDepartments([
-                    { id: 1, name: 'IT & Systems' },
-                    { id: 2, name: 'Sales & Marketing' },
-                    { id: 3, name: 'Human Resources' },
-                    { id: 4, name: 'Finance & Accounting' },
-                    { id: 5, name: 'Operations' }
-                ]);
-            }
         } catch (error) {
             console.error('Failed to fetch user management data:', error);
+            setUsers([]);
+            setRoles([]);
+            setDepartments([]);
         } finally {
             setLoading(false);
         }
@@ -71,11 +51,6 @@ const UserManagement = () => {
     const handleDeactivateUser = async (user) => {
         if (window.confirm(`Are you sure you want to deactivate ${user.username}?`)) {
             try {
-                // If it's mock data, just update local state
-                if (user.id <= 2 && users.length === 2 && users[0].username === 'admin') {
-                     setUsers(users.map(u => u.id === user.id ? { ...u, status: 'INACTIVE' } : u));
-                     return;
-                }
                 await userManagementApi.deactivateUser(user.id);
                 fetchData();
             } catch (error) {
@@ -87,17 +62,6 @@ const UserManagement = () => {
 
     const handleSaveUser = async (formData) => {
         try {
-            // Check if using mock data
-            if (users.length > 0 && users[0].username === 'admin') {
-                 if (selectedUser) {
-                     setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...formData, role_name: roles.find(r => r.id == formData.role)?.name, department_name: departments.find(d => d.id == formData.department)?.name } : u));
-                 } else {
-                     setUsers([...users, { ...formData, id: Date.now(), role_name: roles.find(r => r.id == formData.role)?.name, department_name: departments.find(d => d.id == formData.department)?.name }]);
-                 }
-                 setIsModalOpen(false);
-                 return;
-            }
-
             if (selectedUser) {
                 await userManagementApi.updateUser(selectedUser.id, formData);
             } else {
@@ -107,10 +71,7 @@ const UserManagement = () => {
             fetchData();
         } catch (error) {
             console.error('Failed to save user:', error);
-            // alert('Error saving user. Please check the console.');
-            
-            // Fallback for UI testing
-            setIsModalOpen(false);
+            alert('Failed to save user. Please verify role, department, and password requirements.');
         }
     };
 

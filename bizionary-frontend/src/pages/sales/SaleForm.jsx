@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X } from 'lucide-react';
 import api from '../../services/api';
@@ -6,13 +6,15 @@ import api from '../../services/api';
 const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
     const isEditing = !!initialData;
     const [products, setProducts] = useState([]);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         product: '',
-        product_name: '', // Added so the mock frontend can display the name easily
         customer_name: '',
         quantity_sold: 1,
         unit_price: 0,
+        sale_date: new Date().toISOString().split('T')[0],
     });
 
     useEffect(() => {
@@ -22,14 +24,7 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                 const res = await api.get('products/');
                 setProducts(res.data.data || res.data);
             } catch (error) {
-                // Fallback Mock Data
-                setProducts([
-                    { id: 1, name: 'A4 Copy Paper 80 GSM', unit_price: 1500 },
-                    { id: 2, name: 'Office Chair Exec', unit_price: 18000 },
-                    { id: 3, name: 'Wireless Mouse', unit_price: 2500 },
-                    { id: 4, name: 'Stapler Pro', unit_price: 450 },
-                    { id: 5, name: 'Printer Ink Black', unit_price: 3500 },
-                ]);
+                setProducts([]);
             }
         };
         fetchProducts();
@@ -41,13 +36,38 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
         } else {
             setFormData({
                 product: '',
-                product_name: '',
                 customer_name: '',
                 quantity_sold: 1,
                 unit_price: 0,
+                sale_date: new Date().toISOString().split('T')[0],
             });
         }
+        setErrorMessage('');
     }, [initialData, isOpen]);
+
+    const selectedProduct = useMemo(
+        () => products.find((p) => p.id === Number(formData.product)),
+        [products, formData.product]
+    );
+
+    const remainingAfterSale = useMemo(() => {
+        if (!selectedProduct) {
+            return null;
+        }
+        return Number(selectedProduct.stock_quantity) - Number(formData.quantity_sold || 0);
+    }, [selectedProduct, formData.quantity_sold]);
+
+    const formatApiError = (error) => {
+        const payload = error?.response?.data;
+        if (!payload) return 'Failed to save sale.';
+        if (typeof payload === 'string') return payload;
+        if (payload.detail) return payload.detail;
+        const firstField = Object.keys(payload)[0];
+        if (firstField && Array.isArray(payload[firstField])) {
+            return `${firstField}: ${payload[firstField].join(', ')}`;
+        }
+        return 'Failed to save sale.';
+    };
 
     const handleChange = (e) => {
         const { name, value, type } = e.target;
@@ -62,20 +82,27 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
             const selectedProduct = products.find(p => p.id === Number(value));
             if (selectedProduct) {
                 newFormData.unit_price = selectedProduct.unit_price;
-                newFormData.product_name = selectedProduct.name;
             }
         }
 
         setFormData(newFormData);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        setSubmitting(true);
+        setErrorMessage('');
+        try {
+            await onSubmit(formData);
+        } catch (error) {
+            setErrorMessage(formatApiError(error));
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+        <Dialog open={isOpen} onClose={submitting ? () => {} : onClose} className="relative z-50">
             <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
             <div className="fixed inset-0 flex items-center justify-center p-4">
@@ -84,7 +111,7 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                         <Dialog.Title className="text-xl font-bold text-textMain">
                             {isEditing ? 'Edit Sale' : 'Create New Sale'}
                         </Dialog.Title>
-                        <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50">
+                        <button onClick={onClose} disabled={submitting} className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 disabled:opacity-50">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -122,6 +149,18 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                             </div>
 
                             <div className="col-span-2 sm:col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Sale Date</label>
+                                <input
+                                    type="date"
+                                    name="sale_date"
+                                    required
+                                    value={formData.sale_date}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                                />
+                            </div>
+
+                            <div className="col-span-2 sm:col-span-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                                 <input
                                     type="number"
@@ -132,6 +171,11 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     onChange={handleChange}
                                     className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                                 />
+                                {selectedProduct && (
+                                    <p className={`text-xs mt-1 ${remainingAfterSale < 0 ? 'text-rose-600' : 'text-slate-600'}`}>
+                                        Remaining after sale: {remainingAfterSale}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="col-span-2 sm:col-span-1">
@@ -150,6 +194,12 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                         </div>
 
+                        {errorMessage && (
+                            <div className="p-3 rounded-lg border border-rose-100 bg-rose-50 text-rose-700 text-sm">
+                                {errorMessage}
+                            </div>
+                        )}
+
                         {/* Calculated Total */}
                         <div className="mt-4 p-4 bg-sky-50 rounded-xl border border-sky-100 flex justify-between items-center">
                             <span className="text-sm font-semibold text-sky-800">Total Price:</span>
@@ -162,15 +212,17 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                             <button
                                 type="button"
                                 onClick={onClose}
+                                disabled={submitting}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primaryDark transition-colors"
+                                disabled={submitting}
+                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primaryDark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                {isEditing ? 'Save Changes' : 'Create Sale'}
+                                {submitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Sale')}
                             </button>
                         </div>
                     </form>

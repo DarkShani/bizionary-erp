@@ -18,11 +18,8 @@ const InvoicesTab = ({ refreshTrigger, onEdit, triggerRefresh }) => {
                     setInvoices(res.data);
                 }
             } catch (error) {
-                console.warn('Failed to fetch invoices, using mock data.');
-                setInvoices([
-                    { id: 1, invoice_number: 'INV-2023-001', client_name: 'Tech Corp', amount: 1250000, status: 'PAID', status_display: 'Paid', due_date: '2023-11-15' },
-                    { id: 2, invoice_number: 'INV-2023-002', client_name: 'Global Logistics', amount: 840000, status: 'UNPAID', status_display: 'Unpaid', due_date: '2023-12-01' }
-                ]);
+                console.warn('Failed to fetch invoices.');
+                setInvoices([]);
             } finally {
                 setLoading(false);
             }
@@ -34,10 +31,6 @@ const InvoicesTab = ({ refreshTrigger, onEdit, triggerRefresh }) => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this invoice?')) {
             try {
-                if (invoices.length > 0 && invoices[0].client_name === 'Tech Corp' && id <= 2) {
-                     setInvoices(invoices.filter(i => i.id !== id));
-                     return;
-                }
                 await accountsApi.deleteInvoice(id);
                 triggerRefresh();
             } catch (error) {
