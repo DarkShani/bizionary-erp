@@ -202,7 +202,7 @@ def top_products(request):
         results.append({
             'product_id': item['product__id'],
             'product_name': item['product__name'],
-            'sku': item['product__sku'],
+            'product_code': item['product__sku'],
             'category': item['product__category'],
             'total_quantity_sold': item['total_quantity_sold'],
             'total_revenue': item['total_revenue'],

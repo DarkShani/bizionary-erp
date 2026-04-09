@@ -3,6 +3,7 @@ import { Plus, Search, Edit2, Trash2, Filter, Receipt } from 'lucide-react';
 import { formatPKR } from '../../utils/currency';
 import api from '../../services/api';
 import SaleForm from './SaleForm';
+import { PRODUCT_CATEGORIES, normalizeProductCategory } from '../../utils/productCategories';
 
 const SalesList = () => {
     const [sales, setSales] = useState([]);
@@ -10,6 +11,7 @@ const SalesList = () => {
 
     // UI States
     const [searchTerm, setSearchTerm] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('ALL');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [currentSale, setCurrentSale] = useState(null);
 
@@ -63,9 +65,12 @@ const SalesList = () => {
     };
 
     const filteredSales = sales.filter(s =>
-        (s.product_name && s.product_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (s.customer_name && s.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        s.id.toString().includes(searchTerm)
+        (
+            (s.product_name && s.product_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (s.customer_name && s.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            s.id.toString().includes(searchTerm)
+        ) &&
+        (categoryFilter === 'ALL' || normalizeProductCategory(s.product_category) === categoryFilter)
     );
 
     return (
@@ -87,10 +92,19 @@ const SalesList = () => {
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button className="flex items-center justify-center px-4 py-2 border border-gray-100 text-textMuted bg-surface rounded-xl hover:bg-slate-50 text-sm font-semibold transition-colors shadow-sm w-full sm:w-auto">
-                        <Filter className="h-4 w-4 mr-2" />
-                        Filters
-                    </button>
+                    <div className="relative w-full sm:w-auto">
+                        <Filter className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <select
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            className="w-full sm:w-44 pl-9 pr-3 py-2 border border-gray-100 rounded-xl text-sm bg-surface text-textMain outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <option value="ALL">All Categories</option>
+                            {PRODUCT_CATEGORIES.map((item) => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                            ))}
+                        </select>
+                    </div>
                     <button
                         onClick={openAddForm}
                         className="flex items-center justify-center px-4 py-2 bg-primary text-white rounded-xl hover:bg-primaryDark text-sm font-bold transition-all shadow-md shadow-primary/20 w-full sm:w-auto"
@@ -115,9 +129,10 @@ const SalesList = () => {
                                     <th className="px-6 py-4 font-semibold">Ref ID</th>
                                     <th className="px-6 py-4 font-semibold">Date</th>
                                     <th className="px-6 py-4 font-semibold">Customer</th>
+                                    <th className="px-6 py-4 font-semibold">Category</th>
                                     <th className="px-6 py-4 font-semibold">Product</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Qty</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Remaining</th>
+                                    <th className="px-6 py-4 font-semibold text-center">Sold Qty</th>
+                                    <th className="px-6 py-4 font-semibold text-center">Current Stock</th>
                                     <th className="px-6 py-4 font-semibold text-right">Total Price</th>
                                     <th className="px-6 py-4 font-semibold text-center">Actions</th>
                                 </tr>
@@ -128,6 +143,7 @@ const SalesList = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-textMuted font-mono text-xs">#SL-{s.id.toString().padStart(4, '0')}</td>
                                         <td className="px-6 py-4 text-textMuted">{s.sale_date}</td>
                                         <td className="px-6 py-4 font-medium text-textMain">{s.customer_name}</td>
+                                        <td className="px-6 py-4 text-textMuted">{normalizeProductCategory(s.product_category) || 'N/A'}</td>
                                         <td className="px-6 py-4 font-bold text-textMain">{s.product_name || `Product ID: ${s.product}`}</td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-50 text-sky-700 border border-sky-100">
@@ -160,7 +176,7 @@ const SalesList = () => {
                                 ))}
                                 {filteredSales.length === 0 && (
                                     <tr>
-                                        <td colSpan="8" className="px-6 py-12 text-center text-textMuted">
+                                        <td colSpan="9" className="px-6 py-12 text-center text-textMuted">
                                             <Receipt className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                                             <p>No sales records found.</p>
                                         </td>

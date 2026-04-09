@@ -52,7 +52,7 @@ class TopProductSerializer(serializers.Serializer):
     """Serializer for top-selling products"""
     product_id = serializers.IntegerField()
     product_name = serializers.CharField()
-    sku = serializers.CharField()
+    product_code = serializers.CharField()
     category = serializers.CharField()
     total_quantity_sold = serializers.IntegerField()
     total_revenue = serializers.DecimalField(max_digits=15, decimal_places=2)

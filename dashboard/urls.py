@@ -26,7 +26,10 @@ urlpatterns = [
     # Recent sales transactions
     path('recent-sales/', views.recent_sales, name='recent-sales'),
     
-    # Outstanding invoices
+    # Outstanding company payables (new canonical route)
+    path('outstanding-payables/', views.outstanding_payables, name='outstanding-payables'),
+
+    # Outstanding invoices (legacy alias kept for backward compatibility)
     path('outstanding-invoices/', views.outstanding_invoices, name='outstanding-invoices'),
     
     # Sales performance over time
@@ -45,6 +48,7 @@ Analytics:
 - GET /api/dashboard/top-products/             # Get top selling products
 - GET /api/dashboard/low-stock-products/       # Get low stock alerts
 - GET /api/dashboard/recent-sales/             # Get recent sales transactions
-- GET /api/dashboard/outstanding-invoices/     # Get outstanding invoices
+- GET /api/dashboard/outstanding-payables/     # Get outstanding company payables
+- GET /api/dashboard/outstanding-invoices/     # Legacy alias (backward compatible)
 - GET /api/dashboard/sales-performance/        # Get sales performance over time
 """

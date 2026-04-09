@@ -30,13 +30,14 @@ class StockHistorySerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     """Serializer for product listing with extended fields"""
     category_name = serializers.CharField(source='category', read_only=True)
+    product_code = serializers.CharField(source='sku')
     total_sales = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
     stock_status = serializers.SerializerMethodField()
     primary_image = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
-        fields = ['id', 'name', 'sku', 'category', 'category_name', 'unit_price', 
+        fields = ['id', 'name', 'product_code', 'category', 'category_name', 'unit_price', 
                   'stock_quantity', 'reorder_level', 'total_sales', 'stock_status', 
                   'primary_image', 'created_at', 'updated_at']
     
@@ -59,13 +60,14 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     """Detailed product serializer with all related data"""
+    product_code = serializers.CharField(source='sku')
     images = ProductImageSerializer(many=True, read_only=True)
     stock_history = StockHistorySerializer(many=True, read_only=True)
     stock_status = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
-        fields = ['id', 'name', 'sku', 'category', 'unit_price', 'stock_quantity', 
+        fields = ['id', 'name', 'product_code', 'category', 'unit_price', 'stock_quantity', 
                   'reorder_level', 'description', 'stock_status', 'images', 
                   'stock_history', 'created_at', 'updated_at']
     
@@ -81,9 +83,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 class ProductCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating products"""
+    product_code = serializers.CharField(source='sku')
+
     class Meta:
         model = Product
-        fields = ['name', 'sku', 'category', 'unit_price', 'stock_quantity', 
+        fields = ['name', 'product_code', 'category', 'unit_price', 'stock_quantity', 
                   'reorder_level', 'description']
     
     def create(self, validated_data):

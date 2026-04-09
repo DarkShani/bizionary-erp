@@ -2,12 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X } from 'lucide-react';
 import api from '../../services/api';
+import { PRODUCT_CATEGORIES, normalizeProductCategory } from '../../utils/productCategories';
 
 const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
     const isEditing = !!initialData;
     const [products, setProducts] = useState([]);
+    const [productsLoading, setProductsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState('Tech');
 
     const [formData, setFormData] = useState({
         product: '',
@@ -21,10 +24,14 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
         // Fetch products for the dropdown
         const fetchProducts = async () => {
             try {
+                setProductsLoading(true);
                 const res = await api.get('products/');
                 setProducts(res.data.data || res.data);
             } catch (error) {
+                console.warn('Failed to load products for sale form.');
                 setProducts([]);
+            } finally {
+                setProductsLoading(false);
             }
         };
         fetchProducts();
@@ -41,9 +48,41 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                 unit_price: 0,
                 sale_date: new Date().toISOString().split('T')[0],
             });
+            setSelectedCategory('Tech');
         }
         setErrorMessage('');
     }, [initialData, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || !products.length) {
+            return;
+        }
+
+        if (initialData?.product) {
+            const matched = products.find((p) => p.id === Number(initialData.product));
+            if (matched) {
+                setSelectedCategory(normalizeProductCategory(matched.category) || 'Tech');
+                return;
+            }
+        }
+
+        // If selected category has no products, fallback to first available category.
+        const activeCategoryHasProducts = products.some(
+            (p) => normalizeProductCategory(p.category) === selectedCategory
+        );
+
+        if (!activeCategoryHasProducts) {
+            const firstAvailable = PRODUCT_CATEGORIES.find((category) =>
+                products.some((p) => normalizeProductCategory(p.category) === category.value)
+            );
+            setSelectedCategory(firstAvailable?.value || 'Tech');
+        }
+    }, [products, initialData, isOpen, selectedCategory]);
+
+    const availableProducts = useMemo(
+        () => products.filter((p) => normalizeProductCategory(p.category) === selectedCategory),
+        [products, selectedCategory]
+    );
 
     const selectedProduct = useMemo(
         () => products.find((p) => p.id === Number(formData.product)),
@@ -72,9 +111,19 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
     const handleChange = (e) => {
         const { name, value, type } = e.target;
 
+        if (name === 'category') {
+            setSelectedCategory(value);
+            setFormData((prev) => ({
+                ...prev,
+                product: '',
+                unit_price: 0,
+            }));
+            return;
+        }
+
         let newFormData = {
             ...formData,
-            [name]: type === 'number' ? Number(value) : value,
+            [name]: (name === 'product' || type === 'number') ? Number(value) : value,
         };
 
         // If product is selected, auto-fill unit_price and product_name for convenience
@@ -132,7 +181,22 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                                 />
                             </div>
 
-                            <div className="col-span-2">
+                            <div className="col-span-2 sm:col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                <select
+                                    name="category"
+                                    required
+                                    value={selectedCategory}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white"
+                                >
+                                    {PRODUCT_CATEGORIES.map((category) => (
+                                        <option key={category.value} value={category.value}>{category.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="col-span-2 sm:col-span-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
                                 <select
                                     name="product"
@@ -141,11 +205,18 @@ const SaleForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     onChange={handleChange}
                                     className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white"
                                 >
-                                    <option value="" disabled>Select a product...</option>
-                                    {products.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    <option value="" disabled>
+                                        {productsLoading ? 'Loading products...' : `Select a ${selectedCategory.toLowerCase()} product...`}
+                                    </option>
+                                    {availableProducts.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.name} ({p.product_code || p.sku})</option>
                                     ))}
                                 </select>
+                                {!productsLoading && availableProducts.length === 0 && (
+                                    <p className="text-xs mt-1 text-amber-600">
+                                        No products found in {selectedCategory}. Try another category.
+                                    </p>
+                                )}
                             </div>
 
                             <div className="col-span-2 sm:col-span-1">

@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X } from 'lucide-react';
 import api from '../../services/api';
+import { PRODUCT_CATEGORIES, normalizeProductCategory, getCompanyForCategory } from '../../utils/productCategories';
 
 const PurchaseForm = ({ isOpen, onClose, onSubmit, initialData }) => {
     const isEditing = !!initialData;
     const [products, setProducts] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('Tech');
 
     const [formData, setFormData] = useState({
         product: '',
-        supplier_name: '',
+        company_name: getCompanyForCategory('Tech'),
         quantity_purchased: 1,
         unit_cost: 0,
         purchase_date: new Date().toISOString().split('T')[0],
@@ -30,25 +32,57 @@ const PurchaseForm = ({ isOpen, onClose, onSubmit, initialData }) => {
 
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
+            const normalizedCategory = normalizeProductCategory(initialData.product_category) || 'Tech';
+            setSelectedCategory(normalizedCategory);
+            setFormData({
+                ...initialData,
+                company_name: getCompanyForCategory(normalizedCategory),
+            });
         } else {
+            const defaultCategory = 'Tech';
             setFormData({
                 product: '',
-                supplier_name: '',
+                company_name: getCompanyForCategory(defaultCategory),
                 quantity_purchased: 1,
                 unit_cost: 0,
                 purchase_date: new Date().toISOString().split('T')[0],
             });
+            setSelectedCategory(defaultCategory);
         }
     }, [initialData, isOpen]);
+
+    const availableProducts = products.filter(
+        (p) => normalizeProductCategory(p.category) === selectedCategory
+    );
 
     const handleChange = (e) => {
         const { name, value, type } = e.target;
 
+        if (name === 'category') {
+            setSelectedCategory(value);
+            setFormData((prev) => ({
+                ...prev,
+                product: '',
+                unit_cost: 0,
+                company_name: getCompanyForCategory(value),
+            }));
+            return;
+        }
+
         let newFormData = {
             ...formData,
-            [name]: type === 'number' ? Number(value) : value,
+            [name]: (name === 'product' || type === 'number') ? Number(value) : value,
         };
+
+        if (name === 'product') {
+            const selectedProduct = products.find((p) => p.id === Number(value));
+            if (selectedProduct) {
+                const normalizedCategory = normalizeProductCategory(selectedProduct.category) || selectedCategory;
+                setSelectedCategory(normalizedCategory);
+                newFormData.unit_cost = Number(selectedProduct.unit_price || 0);
+                newFormData.company_name = getCompanyForCategory(normalizedCategory);
+            }
+        }
 
         setFormData(newFormData);
     };
@@ -76,16 +110,30 @@ const PurchaseForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
 
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Supplier Name</label>
+                            <div className="col-span-2 sm:col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                <select
+                                    name="category"
+                                    required
+                                    value={selectedCategory}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white"
+                                >
+                                    {PRODUCT_CATEGORIES.map((category) => (
+                                        <option key={category.value} value={category.value}>{category.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="col-span-2 sm:col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Company (Auto Assigned)</label>
                                 <input
                                     type="text"
-                                    name="supplier_name"
+                                    name="company_name"
                                     required
-                                    value={formData.supplier_name}
-                                    onChange={handleChange}
-                                    className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                                    placeholder="e.g. Paper Mill Inc"
+                                    value={formData.company_name}
+                                    readOnly
+                                    className="w-full border border-gray-200 rounded-lg p-2.5 text-sm bg-gray-50 text-gray-700"
                                 />
                             </div>
 
@@ -98,9 +146,9 @@ const PurchaseForm = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     onChange={handleChange}
                                     className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white"
                                 >
-                                    <option value="" disabled>Select a product...</option>
-                                    {products.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    <option value="" disabled>Select a {selectedCategory.toLowerCase()} product...</option>
+                                    {availableProducts.map((p) => (
+                                        <option key={p.id} value={p.id}>{p.name} ({p.product_code || p.sku})</option>
                                     ))}
                                 </select>
                             </div>

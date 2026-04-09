@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, FolderKanban, Settings, Package, ShoppingCart, X } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Settings, Package, ShoppingCart, Boxes, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -10,7 +10,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
         { name: 'Products', href: '/products', icon: Package },
         { name: 'Sales', href: '/sales', icon: ShoppingCart },
-        { name: 'Customer & Stocks', href: '/customers-stock', icon: Users },
+        { name: 'Inventory Managment', href: '/inventory-managment', icon: Boxes },
         { name: 'Accounts', href: '/accounts', icon: FolderKanban },
         { name: 'User Management', href: '/user-management', icon: Settings },
     ];

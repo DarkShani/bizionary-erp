@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Filter } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { formatPKR } from '../../utils/currency';
 import api from '../../services/api';
 import ProductForm from './ProductForm';
+import { PRODUCT_CATEGORIES, getCategoryPrefix, normalizeProductCategory } from '../../utils/productCategories';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
@@ -15,7 +16,6 @@ const ProductList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [currentProduct, setCurrentProduct] = useState(null);
-    const [newlyCreatedProductId, setNewlyCreatedProductId] = useState(null);
 
     useEffect(() => {
         fetchProducts();
@@ -65,12 +65,22 @@ const ProductList = () => {
         setFormError('');
         setFormSuccess('');
         try {
+            const normalizedCategory = normalizeProductCategory(productData.category) || 'Tech';
+            const payload = {
+                ...productData,
+                category: normalizedCategory,
+                product_code: productData.product_code,
+            };
+
+            if (!currentProduct && !payload.product_code) {
+                payload.product_code = getNextProductCode(normalizedCategory);
+            }
+
             if (currentProduct) {
-                await api.put(`products/${currentProduct.id}/`, productData);
+                await api.put(`products/${currentProduct.id}/`, payload);
                 setFormSuccess('Product updated successfully.');
             } else {
-                const created = await api.post('products/', productData);
-                setNewlyCreatedProductId(created?.data?.id ?? null);
+                await api.post('products/', payload);
                 setFormSuccess('Product created successfully.');
             }
             await fetchProducts();
@@ -105,10 +115,42 @@ const ProductList = () => {
         setIsFormOpen(true);
     };
 
+    const getNextProductCode = (category) => {
+        const normalizedCategory = normalizeProductCategory(category);
+        const prefix = getCategoryPrefix(normalizedCategory);
+        if (!prefix) {
+            return '';
+        }
+
+        const maxNumber = products.reduce((max, item) => {
+            const itemCategory = normalizeProductCategory(item.category);
+            if (itemCategory !== normalizedCategory) {
+                return max;
+            }
+
+            const code = item.product_code || '';
+            const match = code.match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
+            if (!match) {
+                return max;
+            }
+
+            return Math.max(max, Number(match[1]));
+        }, 0);
+
+        return `${prefix}${maxNumber + 1}`;
+    };
+
     const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.product_code || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const productsByCategory = PRODUCT_CATEGORIES.map((categoryItem) => ({
+        ...categoryItem,
+        items: filteredProducts.filter((p) => normalizeProductCategory(p.category) === categoryItem.value),
+    }));
+
+    const noResults = filteredProducts.length === 0;
 
     return (
         <div className="space-y-6">
@@ -122,17 +164,13 @@ const ProductList = () => {
                     <input
                         type="text"
                         className="block w-full pl-10 pr-3 py-2 border border-gray-100 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm bg-surface shadow-sm text-textMain placeholder-textMuted"
-                        placeholder="Search by product name or SKU..."
+                        placeholder="Search by product name or product code..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button className="flex items-center justify-center px-4 py-2 border border-gray-100 text-textMuted bg-surface rounded-xl hover:bg-slate-50 text-sm font-semibold transition-colors shadow-sm w-full sm:w-auto">
-                        <Filter className="h-4 w-4 mr-2" />
-                        Filters
-                    </button>
                     <button
                         onClick={openAddForm}
                         className="flex items-center justify-center px-4 py-2 bg-primary text-white rounded-xl hover:bg-primaryDark text-sm font-bold transition-all shadow-md shadow-primary/20 w-full sm:w-auto"
@@ -154,89 +192,87 @@ const ProductList = () => {
                 </div>
             )}
 
-            {/* Main Table */}
-            <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                {loading ? (
-                    <div className="h-64 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-white text-textMuted text-xs uppercase tracking-wider border-b border-gray-100">
-                                <tr>
-                                    <th className="px-6 py-4 font-semibold">SKU</th>
-                                    <th className="px-6 py-4 font-semibold">Product Name</th>
-                                    <th className="px-6 py-4 font-semibold">Category</th>
-                                    <th className="px-6 py-4 font-semibold text-right">Unit Price</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Stock</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Reorder Lvl</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Created In DB</th>
-                                    <th className="px-6 py-4 font-semibold text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {filteredProducts.map((p) => {
-                                    const isLowStock = p.stock_quantity <= p.reorder_level;
-                                    const isNewlyCreated = newlyCreatedProductId === p.id;
-                                    const createdAtLabel = p.created_at
-                                        ? new Date(p.created_at).toLocaleString()
-                                        : 'N/A';
-                                    return (
-                                        <tr key={p.id} className={`hover:bg-slate-50 transition-colors ${isNewlyCreated ? 'bg-emerald-50/60' : ''}`}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-textMuted font-mono text-xs">{p.sku}</td>
-                                            <td className="px-6 py-4 font-bold text-textMain">{p.name}</td>
-                                            <td className="px-6 py-4 text-textMuted">{p.category || 'N/A'}</td>
-                                            <td className="px-6 py-4 font-bold text-textMain text-right">{formatPKR(p.unit_price)}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${isLowStock ? 'bg-red-50 text-danger border border-red-100' : 'bg-green-50 text-success border border-green-100'}`}>
-                                                    {p.stock_quantity}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center text-textMuted font-medium">{p.reorder_level}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                {isNewlyCreated ? (
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                                                        Created in DB
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-xs text-textMuted">{createdAtLabel}</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex items-center justify-center gap-3">
-                                                    <button
-                                                        onClick={() => openEditForm(p)}
-                                                        className="text-gray-400 hover:text-primary transition-colors"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit2 className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(p.id)}
-                                                        className="text-gray-400 hover:text-danger hover:fill-danger/10 transition-colors"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
+            {loading ? (
+                <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm h-64 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+            ) : (
+                <div className="space-y-5">
+                    {productsByCategory.map((section) => (
+                        <div key={section.value} className="bg-surface rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="px-6 py-4 border-b border-gray-100 bg-white flex items-center justify-between">
+                                <h3 className="text-base font-bold text-textMain">{section.label} Section</h3>
+                                <span className="text-xs font-semibold text-textMuted bg-slate-100 px-2.5 py-1 rounded-lg">
+                                    {section.items.length} item(s)
+                                </span>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-white text-textMuted text-xs uppercase tracking-wider border-b border-gray-100">
+                                        <tr>
+                                            <th className="px-6 py-4 font-semibold">Product Code</th>
+                                            <th className="px-6 py-4 font-semibold">Product Name</th>
+                                            <th className="px-6 py-4 font-semibold text-right">Unit Price</th>
+                                            <th className="px-6 py-4 font-semibold text-center">Stock</th>
+                                            <th className="px-6 py-4 font-semibold text-center">Reorder Lvl</th>
+                                            <th className="px-6 py-4 font-semibold text-center">Actions</th>
                                         </tr>
-                                    )
-                                })}
-                                {filteredProducts.length === 0 && (
-                                    <tr>
-                                        <td colSpan="8" className="px-6 py-12 text-center text-textMuted">
-                                            <Search className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                                            <p>No products found matching your search.</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {section.items.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="6" className="px-6 py-8 text-center text-textMuted">
+                                                    No products in this section.
+                                                </td>
+                                            </tr>
+                                        ) : section.items.map((p) => {
+                                            const isLowStock = p.stock_quantity <= p.reorder_level;
+                                            return (
+                                                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-textMuted font-mono text-xs">{p.product_code}</td>
+                                                    <td className="px-6 py-4 font-bold text-textMain">{p.name}</td>
+                                                    <td className="px-6 py-4 font-bold text-textMain text-right">{formatPKR(p.unit_price)}</td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${isLowStock ? 'bg-red-50 text-danger border border-red-100' : 'bg-green-50 text-success border border-green-100'}`}>
+                                                            {p.stock_quantity}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center text-textMuted font-medium">{p.reorder_level}</td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="flex items-center justify-center gap-3">
+                                                            <button
+                                                                onClick={() => openEditForm(p)}
+                                                                className="text-gray-400 hover:text-primary transition-colors"
+                                                                title="Edit"
+                                                            >
+                                                                <Edit2 className="h-4 w-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(p.id)}
+                                                                className="text-gray-400 hover:text-danger hover:fill-danger/10 transition-colors"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ))}
+
+                    {noResults && (
+                        <div className="bg-surface rounded-3xl border border-gray-100 shadow-sm px-6 py-12 text-center text-textMuted">
+                            <Search className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                            <p>No products found matching your search.</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Slide-over or Modal for Form */}
             <ProductForm
@@ -246,6 +282,7 @@ const ProductList = () => {
                 initialData={currentProduct}
                 submitting={submitting}
                 errorMessage={formError}
+                getNextProductCode={getNextProductCode}
             />
         </div>
     );
