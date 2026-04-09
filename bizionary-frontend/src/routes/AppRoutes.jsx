@@ -10,8 +10,8 @@ import PurchasesList from '../pages/purchases/PurchasesList';
 import InvoicesList from '../pages/invoices/InvoicesList';
 import UserManagement from '../pages/user-management/UserManagement';
 import AccountsManager from '../pages/accounts/AccountsManager';
-import CustomersAndStocks from '../pages/customers-stock/CustomersAndStocks';
 import Settings from '../pages/settings/Settings';
+import InventoryManagment from '../pages/inventory-managment/InventoryManagment';
 
 // Placeholders for other pages
 const Placeholder = ({ title }) => (
@@ -32,7 +32,7 @@ const AppRoutes = () => {
                 <Route path="sales" element={<SalesList />} />
                 <Route path="purchases" element={<PurchasesList />} />
                 <Route path="invoices" element={<InvoicesList />} />
-                <Route path="customers-stock" element={<CustomersAndStocks />} />
+                <Route path="inventory-managment" element={<InventoryManagment />} />
                 <Route path="accounts" element={<AccountsManager />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="user-management" element={

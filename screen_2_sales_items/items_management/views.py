@@ -22,7 +22,7 @@ def product_list_create(request):
     if request.method == 'GET':
         products = Product.objects.all()
         
-        # Search by name, SKU, or category
+        # Search by name, product code, or category
         search = request.query_params.get('search', None)
         if search:
             products = products.filter(
@@ -192,7 +192,7 @@ def product_search_suggestions(request):
     )[:10]
     
     suggestions = [
-        {'id': p.id, 'name': p.name, 'sku': p.sku}
+        {'id': p.id, 'name': p.name, 'product_code': p.sku}
         for p in products
     ]
     

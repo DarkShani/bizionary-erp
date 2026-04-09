@@ -6,6 +6,8 @@ from products.models import Product
 
 class SaleSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_code = serializers.CharField(source='product.sku', read_only=True)
+    product_category = serializers.CharField(source='product.category', read_only=True)
     remaining_stock = serializers.IntegerField(source='product.stock_quantity', read_only=True)
 
     class Meta:

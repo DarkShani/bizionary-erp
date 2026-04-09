@@ -18,9 +18,6 @@ urlpatterns = [
     # Screen 2: Sales & Items Management APIs
     path('api/screen2/', include('screen_2_sales_items.urls')),
     
-    # Screen 3: Customer Analytics & Stocks APIs
-    path('api/screen3/', include('screen_3_customer_and_stocks.urls')),
-    
     # Screen 4: Accounts & Finance APIs
     path('api/accounts/', include('accounts.urls', namespace='accounts')),
     

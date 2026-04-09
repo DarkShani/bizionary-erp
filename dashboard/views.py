@@ -19,12 +19,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Sum, Count, F, Q, ExpressionWrapper, DecimalField
-from django.db.models.functions import TruncMonth, ExtractMonth, ExtractYear
+from django.db.models.functions import TruncMonth, TruncDay, ExtractMonth, ExtractYear
+from django.utils.dateparse import parse_date
 from decimal import Decimal
 
 from products.models import Product
 from sales.models import Sale
-from invoices.models import Invoice
 from purchases.models import Purchase
 
 from .serializers import (
@@ -34,6 +34,53 @@ from .serializers import (
     LowStockProductSerializer,
     RecentSaleSerializer
 )
+
+
+def _outstanding_payables_response():
+    """Build shared response payload for outstanding company payables."""
+    try:
+        # Get unpaid and partially paid purchase orders.
+        outstanding_rows = Purchase.objects.select_related('product').filter(
+            Q(payment_status='UNPAID') | Q(payment_status='PARTIAL')
+        ).values(
+            'id',
+            'company_name',
+            'product__name',
+            'total_cost',
+            'purchase_date',
+            'payment_status'
+        ).order_by('purchase_date')
+
+        result = []
+        for item in outstanding_rows:
+            total_cost = item['total_cost'] or Decimal('0.00')
+            # Current purchases schema has no paid-amount field.
+            # For PARTIAL, use a stable 50% paid assumption for payable balance.
+            if item['payment_status'] == 'PARTIAL':
+                amount_paid = (total_cost * Decimal('0.50')).quantize(Decimal('0.01'))
+            else:
+                amount_paid = Decimal('0.00')
+            balance = (total_cost - amount_paid).quantize(Decimal('0.01'))
+
+            result.append({
+                'id': item['id'],
+                'reference_number': f"PO-{str(item['id']).zfill(4)}",
+                'company_name': item['company_name'],
+                'product_name': item['product__name'],
+                'total_amount': total_cost,
+                'amount_paid': amount_paid,
+                'balance': balance,
+                'due_date': item['purchase_date'],
+                'status': item['payment_status'],
+            })
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response(
+            {'error': f'Failed to fetch outstanding payables: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])
@@ -88,12 +135,12 @@ def dashboard_kpis(request):
         )
         total_purchases_value = to_2dp(purchases_aggregate['total'])
 
-        # KPI 6: Total Invoices Count
-        total_invoices = Invoice.objects.count()
+        # KPI 6: Total purchase orders count (kept in `total_invoices` for API compatibility)
+        total_invoices = Purchase.objects.count()
 
-        # KPI 7: Unpaid Invoices Count
-        unpaid_invoices = Invoice.objects.filter(
-            Q(status='UNPAID') | Q(status='PARTIALLY_PAID')
+        # KPI 7: Outstanding payable purchase orders count (kept in `unpaid_invoices` for API compatibility)
+        unpaid_invoices = Purchase.objects.filter(
+            Q(payment_status='UNPAID') | Q(payment_status='PARTIAL')
         ).count()
 
         # KPI 8: Low Stock Products Count (stock_quantity < reorder_level)
@@ -109,6 +156,12 @@ def dashboard_kpis(request):
             'total_inventory_value': total_inventory_value,
             'total_revenue': total_revenue,
             'total_purchases_value': total_purchases_value,
+
+            # New explicit names
+            'total_purchase_orders': total_invoices,
+            'pending_company_payables': unpaid_invoices,
+
+            # Legacy names
             'total_invoices': total_invoices,
             'unpaid_invoices': unpaid_invoices,
             'low_stock_count': low_stock_count,
@@ -206,7 +259,7 @@ def top_products(request):
             {
                 "product_id": 1,
                 "product_name": "A4 Copy Paper 80 GSM",
-                "product_sku": "PAP-A4-80",
+                "product_code": "PAP-A4-80",
                 "quantity_sold": 500,
                 "total_revenue": 25000.00
             }
@@ -231,7 +284,7 @@ def top_products(request):
             result.append({
                 'product_id': item['product__id'],
                 'product_name': item['product__name'],
-                'product_sku': item['product__sku'],
+                'product_code': item['product__sku'],
                 'quantity_sold': item['quantity_sold'],
                 'total_revenue': item['total_revenue']
             })
@@ -261,7 +314,7 @@ def low_stock_products(request):
             {
                 "product_id": 5,
                 "product_name": "Office Supplies",
-                "sku": "OFF-SUP-001",
+                "product_code": "OFF-SUP-001",
                 "stock_quantity": 15,
                 "reorder_level": 20,
                 "unit_price": 150.00
@@ -299,7 +352,7 @@ def low_stock_products(request):
             result.append({
                 'product_id': item['id'],
                 'product_name': item['name'],
-                'sku': item['sku'],
+                'product_code': item['sku'],
                 'stock_quantity': item['stock_quantity'],
                 'reorder_level': item['reorder_level'],
                 'unit_price': item['unit_price'],
@@ -380,14 +433,15 @@ def recent_sales(request):
 
 
 @api_view(['GET'])
-def outstanding_invoices(request):
+def outstanding_payables(request):
     """
-    Outstanding Invoices Details
-    
-    Returns detailed list of unpaid and partially paid invoices
+    Outstanding Company Payables Details
+
+    Returns detailed list of unpaid and partially paid purchase orders.
+    Route name remains unchanged for frontend compatibility.
     
     Method: GET
-    Endpoint: /api/dashboard/outstanding-invoices/
+    Endpoint: /api/dashboard/outstanding-payables/
     
     Response:
         [
@@ -403,33 +457,13 @@ def outstanding_invoices(request):
             }
         ]
     """
-    try:
-        # Get unpaid and partially paid invoices
-        outstanding = Invoice.objects.filter(
-            Q(status='UNPAID') | Q(status='PARTIALLY_PAID')
-        ).annotate(
-            balance=ExpressionWrapper(
-                F('total_amount') - F('amount_paid'),
-                output_field=DecimalField(max_digits=12, decimal_places=2)
-            )
-        ).values(
-            'id',
-            'invoice_number',
-            'customer_name',
-            'total_amount',
-            'amount_paid',
-            'balance',
-            'due_date',
-            'status'
-        ).order_by('due_date')
+    return _outstanding_payables_response()
 
-        return Response(list(outstanding), status=status.HTTP_200_OK)
 
-    except Exception as e:
-        return Response(
-            {'error': f'Failed to fetch outstanding invoices: {str(e)}'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+@api_view(['GET'])
+def outstanding_invoices(request):
+    """Backward-compatible alias for legacy route name."""
+    return _outstanding_payables_response()
 
 
 @api_view(['GET'])
@@ -444,8 +478,11 @@ def sales_performance(request):
     Endpoint: /api/dashboard/sales-performance/
     
     Query Parameters:
-        - period (optional): 'daily', 'weekly', 'monthly' (default: 'monthly')
+        - period (optional): 'daily' or 'monthly' (default: 'monthly')
         - year (optional): Filter by specific year
+        - date (optional): Filter by exact date YYYY-MM-DD
+        - start_date (optional): Lower bound date YYYY-MM-DD
+        - end_date (optional): Upper bound date YYYY-MM-DD
     
     Response:
         [
@@ -454,15 +491,52 @@ def sales_performance(request):
         ]
     """
     try:
-        period = request.query_params.get('period', 'monthly')
+        period = request.query_params.get('period', 'monthly').lower()
         year_filter = request.query_params.get('year', None)
+        specific_date = request.query_params.get('date', None)
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
 
         queryset = Sale.objects.all()
         
         if year_filter:
             queryset = queryset.filter(sale_date__year=year_filter)
 
-        if period == 'monthly':
+        if specific_date:
+            parsed_specific_date = parse_date(specific_date)
+            if not parsed_specific_date:
+                return Response(
+                    {'error': 'Invalid date format. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            queryset = queryset.filter(sale_date=parsed_specific_date)
+
+        if start_date:
+            parsed_start_date = parse_date(start_date)
+            if not parsed_start_date:
+                return Response(
+                    {'error': 'Invalid start_date format. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            queryset = queryset.filter(sale_date__gte=parsed_start_date)
+
+        if end_date:
+            parsed_end_date = parse_date(end_date)
+            if not parsed_end_date:
+                return Response(
+                    {'error': 'Invalid end_date format. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            queryset = queryset.filter(sale_date__lte=parsed_end_date)
+
+        if period == 'daily':
+            performance_data = queryset.annotate(
+                period_date=TruncDay('sale_date')
+            ).values('period_date').annotate(
+                total_sales=Count('id'),
+                revenue=Sum('total_price')
+            ).order_by('period_date')
+        elif period == 'monthly':
             # Group by month
             performance_data = queryset.annotate(
                 period_date=TruncMonth('sale_date')
@@ -471,18 +545,15 @@ def sales_performance(request):
                 revenue=Sum('total_price')
             ).order_by('period_date')
         else:
-            # Default to monthly
-            performance_data = queryset.annotate(
-                period_date=TruncMonth('sale_date')
-            ).values('period_date').annotate(
-                total_sales=Count('id'),
-                revenue=Sum('total_price')
-            ).order_by('period_date')
+            return Response(
+                {'error': "Invalid period. Use 'daily' or 'monthly'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         result = []
         for item in performance_data:
             result.append({
-                'period': item['period_date'].strftime('%Y-%m') if item['period_date'] else 'N/A',
+                'period': item['period_date'].strftime('%Y-%m-%d') if period == 'daily' and item['period_date'] else item['period_date'].strftime('%Y-%m') if item['period_date'] else 'N/A',
                 'total_sales': item['total_sales'],
                 'revenue': item['revenue']
             })

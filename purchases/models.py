@@ -13,7 +13,7 @@ class Purchase(models.Model):
         on_delete=models.PROTECT,
         related_name='purchases'
     )
-    supplier_name = models.CharField(max_length=255)
+    company_name = models.CharField(max_length=255)
     quantity_purchased = models.IntegerField(
         validators=[MinValueValidator(1)]
     )
@@ -47,7 +47,7 @@ class Purchase(models.Model):
         indexes = [
             models.Index(fields=['purchase_date']),
             models.Index(fields=['product']),
-            models.Index(fields=['supplier_name']),
+            models.Index(fields=['company_name']),
         ]
 
     def __str__(self):

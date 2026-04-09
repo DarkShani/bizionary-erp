@@ -1,37 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X } from 'lucide-react';
+import { PRODUCT_CATEGORIES, normalizeProductCategory } from '../../utils/productCategories';
 
-const ProductForm = ({ isOpen, onClose, onSubmit, initialData, submitting = false, errorMessage = '' }) => {
+const ProductForm = ({ isOpen, onClose, onSubmit, initialData, submitting = false, errorMessage = '', getNextProductCode }) => {
     const isEditing = !!initialData;
     const [formData, setFormData] = useState({
         name: '',
-        sku: '',
+        product_code: '',
         description: '',
         stock_quantity: 0,
         reorder_level: 10,
         unit_price: 0,
-        category: '',
+        category: 'Tech',
     });
 
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
+            setFormData({
+                ...initialData,
+                category: normalizeProductCategory(initialData.category) || 'Tech',
+            });
         } else {
+            const defaultCategory = 'Tech';
             setFormData({
                 name: '',
-                sku: '',
+                product_code: getNextProductCode ? getNextProductCode(defaultCategory) : '',
                 description: '',
                 stock_quantity: 0,
                 reorder_level: 10,
                 unit_price: 0,
-                category: '',
+                category: defaultCategory,
             });
         }
-    }, [initialData, isOpen]);
+    }, [initialData, isOpen, getNextProductCode]);
 
     const handleChange = (e) => {
         const { name, value, type } = e.target;
+
+        if (name === 'category' && !isEditing) {
+            const normalizedCategory = normalizeProductCategory(value) || 'Tech';
+            setFormData((prev) => ({
+                ...prev,
+                category: normalizedCategory,
+                product_code: getNextProductCode ? getNextProductCode(normalizedCategory) : prev.product_code,
+            }));
+            return;
+        }
+
         setFormData((prev) => ({
             ...prev,
             [name]: type === 'number' ? Number(value) : value,
@@ -74,15 +90,16 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData, submitting = fals
                             </div>
 
                             <div className="col-span-2 sm:col-span-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Product Code</label>
                                 <input
                                     type="text"
-                                    name="sku"
+                                    name="product_code"
                                     required
-                                    value={formData.sku}
+                                    value={formData.product_code}
                                     onChange={handleChange}
-                                    className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                                    placeholder="e.g. PAP-A4"
+                                    readOnly={!isEditing}
+                                    className={`w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm ${!isEditing ? 'bg-gray-50 text-gray-600' : ''}`}
+                                    placeholder="Auto-generated from category"
                                 />
                             </div>
 
@@ -114,14 +131,16 @@ const ProductForm = ({ isOpen, onClose, onSubmit, initialData, submitting = fals
 
                             <div className="col-span-2 sm:col-span-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                                <input
-                                    type="text"
+                                <select
                                     name="category"
                                     value={formData.category}
                                     onChange={handleChange}
-                                    className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                                    placeholder="e.g. Office Supplies"
-                                />
+                                    className="w-full border border-gray-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white"
+                                >
+                                    {PRODUCT_CATEGORIES.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="col-span-2 sm:col-span-1">
