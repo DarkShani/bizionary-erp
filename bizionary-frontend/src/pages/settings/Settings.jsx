@@ -1,9 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Moon, Sun, Monitor, User, Bell, Shield, KeyRound, MonitorSmartphone, Globe, Puzzle, Eye, EyeOff } from 'lucide-react';
+import { Moon, Sun, Monitor, User, Bell, Shield, KeyRound, MonitorSmartphone, Globe, Puzzle, Eye, EyeOff, ImagePlus, Upload, Plus } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 const SETTINGS_STORAGE_KEY = 'app-settings-preferences';
+const CUSTOM_WALLPAPERS_STORAGE_KEY = 'app-custom-wallpapers';
+const SELECTED_WALLPAPER_STORAGE_KEY = 'app-selected-wallpaper';
+
+const BUILTIN_WALLPAPERS = [
+    'beautiful-shot-green-cliffs-near-body-water.jpg',
+    'beautiful-shot-mountain-landscape-partially-covered-with-snow.jpg',
+    'casey-horner-4rDCa5hBlCs-unsplash.jpg',
+    'irina-iriser-2Y4dE8sdhlc-unsplash.jpg',
+    'luca-bravo-ESkw2ayO2As-unsplash.jpg',
+    'tree-surrounded-by-greenery-sunlight-dartmoor-national-park-devon-uk.jpg',
+];
+
+const toWallpaperOption = (fileName) => ({
+    id: `builtin-${fileName}`,
+    name: fileName.replace(/[-_]/g, ' ').replace(/\.[^/.]+$/, ''),
+    src: `/wallpapers/${fileName}`,
+    source: 'builtin',
+});
 
 const Settings = () => {
     const { user, updateUser } = useAuth();
@@ -48,6 +66,11 @@ const Settings = () => {
     });
     const [preferencesStatus, setPreferencesStatus] = useState({ type: '', message: '' });
 
+    const [customWallpapers, setCustomWallpapers] = useState([]);
+    const [selectedWallpaper, setSelectedWallpaper] = useState(`/wallpapers/${BUILTIN_WALLPAPERS[0]}`);
+    const [wallpaperStatus, setWallpaperStatus] = useState({ type: '', message: '' });
+    const [folderWallpaperName, setFolderWallpaperName] = useState('');
+
     useEffect(() => {
         const fullName = (user?.name || '').trim();
         const parts = fullName ? fullName.split(' ') : [];
@@ -80,9 +103,109 @@ const Settings = () => {
         }
     }, []);
 
+    useEffect(() => {
+        const savedCustom = localStorage.getItem(CUSTOM_WALLPAPERS_STORAGE_KEY);
+        if (savedCustom) {
+            try {
+                const parsed = JSON.parse(savedCustom);
+                if (Array.isArray(parsed)) {
+                    setCustomWallpapers(parsed);
+                }
+            } catch (error) {
+                console.warn('Failed to read custom wallpapers from local storage', error);
+            }
+        }
+
+        const savedSelected = localStorage.getItem(SELECTED_WALLPAPER_STORAGE_KEY);
+        if (savedSelected) {
+            setSelectedWallpaper(savedSelected);
+        } else {
+            setSelectedWallpaper(`/wallpapers/${BUILTIN_WALLPAPERS[0]}`);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!selectedWallpaper) {
+            return;
+        }
+
+        document.documentElement.style.setProperty('--app-wallpaper-image', `url('${selectedWallpaper}')`);
+        localStorage.setItem(SELECTED_WALLPAPER_STORAGE_KEY, selectedWallpaper);
+    }, [selectedWallpaper]);
+
     const showTransientStatus = (setter, statusPayload, timeout = 2500) => {
         setter(statusPayload);
         setTimeout(() => setter({ type: '', message: '' }), timeout);
+    };
+
+    const persistCustomWallpapers = (nextWallpapers) => {
+        setCustomWallpapers(nextWallpapers);
+        localStorage.setItem(CUSTOM_WALLPAPERS_STORAGE_KEY, JSON.stringify(nextWallpapers));
+    };
+
+    const addWallpaperFromFolder = () => {
+        const trimmed = folderWallpaperName.trim();
+        if (!trimmed) {
+            showTransientStatus(setWallpaperStatus, { type: 'error', message: 'Please enter wallpaper file name first.' });
+            return;
+        }
+
+        const normalized = trimmed.startsWith('/wallpapers/') ? trimmed : `/wallpapers/${trimmed}`;
+
+        const newWallpaper = {
+            id: `folder-${Date.now()}`,
+            name: trimmed.replace(/[-_]/g, ' ').replace(/\.[^/.]+$/, ''),
+            src: normalized,
+            source: 'folder',
+        };
+
+        const existing = [...customWallpapers].some((item) => item.src === normalized);
+        if (existing) {
+            showTransientStatus(setWallpaperStatus, { type: 'error', message: 'This wallpaper is already in the gallery.' });
+            return;
+        }
+
+        const next = [newWallpaper, ...customWallpapers];
+        persistCustomWallpapers(next);
+        setSelectedWallpaper(normalized);
+        setFolderWallpaperName('');
+        showTransientStatus(setWallpaperStatus, { type: 'success', message: 'Wallpaper added from folder.' });
+    };
+
+    const handleUploadWallpapers = (event) => {
+        const files = Array.from(event.target.files || []);
+        if (!files.length) {
+            return;
+        }
+
+        const readers = files
+            .filter((file) => file.type.startsWith('image/'))
+            .map((file) => new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve({
+                        id: `upload-${Date.now()}-${file.name}`,
+                        name: file.name.replace(/[-_]/g, ' ').replace(/\.[^/.]+$/, ''),
+                        src: reader.result,
+                        source: 'uploaded',
+                    });
+                };
+                reader.readAsDataURL(file);
+            }));
+
+        Promise.all(readers).then((uploadedWallpapers) => {
+            if (!uploadedWallpapers.length) {
+                showTransientStatus(setWallpaperStatus, { type: 'error', message: 'No valid image files selected.' });
+                return;
+            }
+
+            const next = [...uploadedWallpapers, ...customWallpapers];
+            persistCustomWallpapers(next);
+            setSelectedWallpaper(uploadedWallpapers[0].src);
+            showTransientStatus(setWallpaperStatus, { type: 'success', message: 'New wallpapers uploaded successfully.' });
+        });
+
+        event.target.value = '';
     };
 
     const persistPreferences = (nextPreferences, successMessage) => {
@@ -194,6 +317,16 @@ const Settings = () => {
         { name: 'Privacy & Security', icon: Shield },
     ];
 
+    const allWallpapers = [
+        ...BUILTIN_WALLPAPERS.map(toWallpaperOption),
+        ...customWallpapers,
+    ].reduce((accumulator, wallpaper) => {
+        if (!accumulator.some((item) => item.src === wallpaper.src)) {
+            accumulator.push(wallpaper);
+        }
+        return accumulator;
+    }, []);
+
     const renderLeftSidebar = () => (
         <div className="md:col-span-1 space-y-1">
             {sidebarLinks.map((link) => {
@@ -251,6 +384,72 @@ const Settings = () => {
                     <Monitor className="w-8 h-8" />
                     <span className="font-bold text-sm">System</span>
                 </button>
+            </div>
+
+            <div className="mt-8 border-t border-gray-100 dark:border-slate-700 pt-6">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <ImagePlus className="w-4 h-4 text-primary" />
+                            Wallpaper Gallery
+                        </h4>
+                        <p className="text-xs text-textMuted dark:text-gray-400 mt-1">Pick wallpaper from your wallpapers folder or upload more images.</p>
+                    </div>
+                    <label className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-sky-600 transition-colors">
+                        <Upload className="w-4 h-4" />
+                        Add More Wallpapers
+                        <input type="file" accept="image/*" multiple className="hidden" onChange={handleUploadWallpapers} />
+                    </label>
+                </div>
+
+                {wallpaperStatus.message && (
+                    <div className={`mt-4 p-3 rounded-xl text-sm font-bold border ${wallpaperStatus.type === 'success' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20'}`}>
+                        {wallpaperStatus.message}
+                    </div>
+                )}
+
+                <div className="mt-4 flex items-center gap-2">
+                    <input
+                        type="text"
+                        value={folderWallpaperName}
+                        onChange={(event) => setFolderWallpaperName(event.target.value)}
+                        placeholder="Enter file name in wallpapers folder (e.g. my-wallpaper.jpg)"
+                        className="flex-1 p-2.5 rounded-xl border border-gray-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 dark:text-white outline-none focus:border-primary transition-all duration-300 text-sm"
+                    />
+                    <button
+                        type="button"
+                        onClick={addWallpaperFromFolder}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white rounded-xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add
+                    </button>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {allWallpapers.map((wallpaper) => {
+                        const isActive = selectedWallpaper === wallpaper.src;
+                        return (
+                            <button
+                                key={wallpaper.id}
+                                type="button"
+                                onClick={() => setSelectedWallpaper(wallpaper.src)}
+                                className={`group relative overflow-hidden rounded-xl border-2 transition-all duration-300 ${isActive ? 'border-primary shadow-md shadow-primary/20' : 'border-transparent hover:border-primary/50'}`}
+                                title={wallpaper.name}
+                            >
+                                <img src={wallpaper.src} alt={wallpaper.name} className="h-24 w-full object-cover" />
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
+                                    <p className="text-[10px] text-white font-semibold truncate">{wallpaper.name}</p>
+                                </div>
+                                {isActive && (
+                                    <div className="absolute top-2 right-2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                        Active
+                                    </div>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
@@ -583,7 +782,7 @@ const Settings = () => {
     return (
         <div className="max-w-5xl mx-auto space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-textMain dark:text-white">Settings</h1>
+                <h1 className="heading-legible text-2xl font-bold">Settings</h1>
                 <p className="text-sm text-textMuted dark:text-gray-400 mt-1">Manage your account settings, preferences, and notifications.</p>
             </div>
 

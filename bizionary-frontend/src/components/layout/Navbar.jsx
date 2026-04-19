@@ -9,12 +9,12 @@ const Navbar = ({ onToggleSidebar }) => {
     const navigate = useNavigate();
 
     return (
-        <header className="h-24 bg-surface dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between px-4 md:px-8 z-20 sticky top-0 transition-colors duration-300">
+        <header className="h-24 bg-gradient-to-r from-white via-sky-50/45 to-violet-50/35 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/60 border-b border-sky-100/70 dark:border-slate-800 flex items-center justify-between px-4 md:px-8 z-20 sticky top-0 transition-colors duration-300">
             {/* Mobile Sidebar Toggle */}
             <div className="flex justify-center items-center md:hidden mr-4">
                 <button 
                     onClick={onToggleSidebar}
-                    className="p-2 text-textMuted dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none"
+                    className="p-2 text-textMuted dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors focus:outline-none neon-action rounded-lg"
                 >
                     <Menu className="h-6 w-6" />
                 </button>
@@ -22,7 +22,7 @@ const Navbar = ({ onToggleSidebar }) => {
 
             {/* Search Bar - Left Side */}
             <div className="flex-1 max-w-xl">
-                <div className="relative flex items-center w-full h-11 rounded-xl bg-background dark:bg-slate-800 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary border border-transparent dark:border-slate-700 transition-all overflow-hidden shadow-sm">
+                <div className="relative flex items-center w-full h-11 rounded-xl bg-gradient-to-r from-white to-sky-50/70 dark:from-slate-900 dark:to-slate-800/90 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary border border-sky-100/70 dark:border-slate-700 transition-all overflow-hidden shadow-sm neon-hover-soft">
                     <div className="grid place-items-center h-full w-12 text-gray-400">
                         <Search className="h-5 w-5" />
                     </div>
@@ -41,7 +41,7 @@ const Navbar = ({ onToggleSidebar }) => {
                 <div className="flex items-center space-x-3 relative">
                     <button 
                         onClick={() => navigate('/settings')}
-                        className="p-2.5 text-textMuted dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:bg-sky-50 dark:hover:bg-slate-800 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 bg-background dark:bg-slate-800 border border-gray-100 dark:border-slate-700 shadow-sm"
+                        className="p-2.5 text-textMuted dark:text-gray-400 hover:text-primary dark:hover:text-primary hover:bg-sky-50 dark:hover:bg-slate-800 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95 bg-background dark:bg-slate-800 border border-gray-100 dark:border-slate-700 shadow-sm neon-action"
                     >
                         <Settings className="h-5 w-5" />
                     </button>
@@ -62,7 +62,7 @@ const Navbar = ({ onToggleSidebar }) => {
 
                     <button
                         onClick={logout}
-                        className="absolute -right-2 top-10 mt-2 p-2 text-white bg-danger rounded-lg transition-all opacity-0 group-hover:opacity-100 shadow-md invisible group-hover:visible hover:scale-105 active:scale-95 z-50"
+                        className="absolute -right-2 top-10 mt-2 p-2 text-white bg-danger rounded-lg transition-all opacity-0 group-hover:opacity-100 shadow-md invisible group-hover:visible hover:scale-105 active:scale-95 z-50 neon-action"
                         title="Logout"
                     >
                         <LogOut className="h-4 w-4" />

@@ -137,9 +137,9 @@ const Dashboard = () => {
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-[#0e2140] p-3 rounded-lg border border-[#2d4f78] shadow-lg text-sm">
-                    <p className="font-bold text-slate-100 mb-1">{label}</p>
-                    <p className="font-semibold text-cyan-300">
+                <div className="bg-white/95 p-3 rounded-lg border border-sky-100 shadow-lg text-sm">
+                    <p className="font-bold text-slate-800 mb-1">{label}</p>
+                    <p className="font-semibold text-sky-600">
                         {formatPKR(payload[0].value)}
                     </p>
                 </div>
@@ -161,29 +161,29 @@ const Dashboard = () => {
             {/* Header/Hero Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-textMain dark:text-slate-100">Business Overview</h1>
+                    <h1 className="heading-legible text-2xl font-extrabold">Business Overview</h1>
                     <p className="text-textMuted dark:text-slate-300 text-sm mt-1">Live business snapshot from your current ERP data.</p>
                 </div>
             </div>
 
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div onClick={() => navigate('/sales')} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group cursor-pointer hover:border-primary/30 transition-colors">
+                <div onClick={() => navigate('/sales')} className="panel-surface tone-revenue p-6 rounded-xl shadow-sm relative overflow-hidden group cursor-pointer neon-hover kpi-zoom">
                     <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full"></div>
-                    <p className="text-textMuted text-sm font-medium">Total Revenue</p>
+                    <p className="text-textMuted dark:text-slate-300 text-sm font-medium">Total Revenue</p>
                     <div className="flex flex-col items-start justify-between mt-3 gap-2">
-                        <h3 className="text-2xl font-extrabold text-slate-900">{formatPKR(kpis.total_revenue)}</h3>
-                        <span className="text-emerald-600 text-xs font-bold flex items-center justify-center bg-emerald-50 px-2 py-1 rounded-full w-max">
+                        <h3 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{formatPKR(kpis.total_revenue)}</h3>
+                        <span className="text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-center bg-emerald-100/90 dark:bg-emerald-900/40 px-2 py-1 rounded-full w-max">
                             Latest month: {formatPKR(latestRevenue)}
                         </span>
                     </div>
                 </div>
 
-                <div onClick={() => navigate('/products')} className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden cursor-pointer hover:border-primary/30 transition-colors">
-                    <p className="text-textMuted text-sm font-medium">Inventory Value</p>
+                <div onClick={() => navigate('/products')} className="panel-surface tone-profit p-6 rounded-xl shadow-sm relative overflow-hidden cursor-pointer neon-hover kpi-zoom">
+                    <p className="text-textMuted dark:text-slate-300 text-sm font-medium">Inventory Value</p>
                     <div className="flex flex-col items-start justify-between mt-3 gap-2">
-                        <h3 className="text-2xl font-extrabold text-slate-900">{formatPKR(kpis.inventory_value)}</h3>
-                        <span className="text-amber-600 text-xs font-bold flex items-center justify-center bg-amber-50 px-2 py-1 rounded-full w-max">
+                        <h3 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{formatPKR(kpis.inventory_value)}</h3>
+                        <span className="text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center justify-center bg-amber-100/90 dark:bg-amber-900/40 px-2 py-1 rounded-full w-max">
                             <span className="material-symbols-outlined !text-xs mr-0.5">inventory</span>{kpis.total_products} Items
                         </span>
                     </div>
@@ -194,18 +194,18 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 gap-6">
 
                 {/* Graph 1: Monthly Selector */}
-                <div className="bg-gradient-to-br from-[#10284b] to-[#173961] p-6 rounded-2xl border border-[#2a4f78] shadow-xl text-slate-100">
+                <div className="bg-gradient-to-br from-sky-50 via-blue-50 to-violet-50 p-6 rounded-2xl border border-sky-100 shadow-xl text-slate-800 neon-hover-soft">
                     <div className="flex items-center justify-between mb-5">
                         <div>
-                            <h4 className="font-bold text-lg">Sales Performance</h4>
-                            <p className="text-slate-300 text-xs">Monthly graph. Click any month to update daily graph below.</p>
+                            <h4 className="widget-heading text-lg">Sales Performance</h4>
+                            <p className="text-slate-500 text-xs">Monthly graph. Click any month to update daily graph below.</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-cyan-300"></span>
-                                <span className="text-[10px] text-slate-300 font-bold">Revenue (Rs.)</span>
+                                <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                                <span className="text-[10px] text-slate-500 font-bold">Revenue (Rs.)</span>
                             </div>
-                            <span className="bg-[#0f2241] border border-[#2a4f78] rounded-lg text-xs font-bold py-1.5 px-3">
+                            <span className="bg-white border border-sky-100 rounded-lg text-xs text-slate-600 font-bold py-1.5 px-3 neon-hover-soft">
                                 {monthlyPerformance.length} Months
                             </span>
                         </div>
@@ -217,27 +217,27 @@ const Dashboard = () => {
                             <BarChart data={monthlyPerformance} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} onClick={handleMonthlyPointClick}>
                                 <defs>
                                     <linearGradient id="monthlyBarGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#2fd3f6" />
-                                        <stop offset="55%" stopColor="#7e63ff" />
-                                        <stop offset="100%" stopColor="#f73ec8" />
+                                        <stop offset="0%" stopColor="#22d3ee" />
+                                        <stop offset="55%" stopColor="#3b82f6" />
+                                        <stop offset="100%" stopColor="#8b5cf6" />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#2d4f78" />
+                                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#cbd5e1" />
                                 <XAxis
                                     dataKey="period"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#b5cde8', fontSize: 10, fontWeight: 'bold' }}
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }}
                                     dy={10}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#b5cde8', fontSize: 10, fontWeight: 'bold' }}
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }}
                                     tickFormatter={(val) => `Rs ${val / 1000}k`}
                                     orientation="left"
                                 />
-                                <Tooltip content={<CustomTooltip />} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(34, 211, 238, 0.08)' }} />
                                 <Bar
                                     dataKey="revenue"
                                     radius={[8, 8, 0, 0]}
@@ -247,30 +247,30 @@ const Dashboard = () => {
                         </ResponsiveContainer>
                         </div>
 
-                        <div className="bg-[#0f2241] border border-[#2a4f78] rounded-xl p-4">
-                            <p className="text-xs uppercase tracking-wide text-slate-300 font-bold mb-3">Selected Month</p>
-                            <p className="text-xl font-extrabold text-cyan-300">{selectedMonthLabel}</p>
-                            <p className="text-xs text-slate-300 mt-2">Month Revenue</p>
-                            <p className="text-lg font-bold text-white">
+                        <div className="bg-white border border-sky-100 rounded-xl p-4 neon-hover-soft">
+                            <p className="text-xs uppercase tracking-wide text-slate-500 font-bold mb-3">Selected Month</p>
+                            <p className="text-xl font-extrabold text-sky-600">{selectedMonthLabel}</p>
+                            <p className="text-xs text-slate-500 mt-2">Month Revenue</p>
+                            <p className="text-lg font-bold text-slate-800">
                                 {formatPKR(monthlyPerformance.find((m) => m.period === selectedMonthLabel)?.revenue || 0)}
                             </p>
 
-                            <div className="mt-4 pt-4 border-t border-[#2a4f78]">
-                                <p className="text-xs text-slate-300">Latest Month</p>
-                                <p className="text-sm font-bold text-white">{formatPKR(latestRevenue)}</p>
+                            <div className="mt-4 pt-4 border-t border-sky-100">
+                                <p className="text-xs text-slate-500">Latest Month</p>
+                                <p className="text-sm font-bold text-slate-800">{formatPKR(latestRevenue)}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Graph 2: Daily Detail */}
-                <div className="bg-gradient-to-br from-[#12294a] to-[#1b3d66] p-6 rounded-2xl border border-[#2a4f78] shadow-xl text-slate-100">
+                <div className="bg-gradient-to-br from-sky-50 via-indigo-50 to-cyan-50 p-6 rounded-2xl border border-sky-100 shadow-xl text-slate-800 neon-hover-soft">
                     <div className="flex items-center justify-between mb-5">
                         <div>
-                            <h4 className="font-bold text-lg">Daily Sales Details</h4>
-                            <p className="text-slate-300 text-xs">For {selectedMonthLabel}. Showing full daily data for the month.</p>
+                            <h4 className="widget-heading text-lg">Daily Sales Details</h4>
+                            <p className="text-slate-500 text-xs">For {selectedMonthLabel}. Showing full daily data for the month.</p>
                         </div>
-                        <span className="bg-[#0f2241] border border-[#2a4f78] rounded-lg text-xs font-bold py-1.5 px-3">
+                        <span className="bg-white border border-sky-100 rounded-lg text-xs text-slate-600 font-bold py-1.5 px-3 neon-hover-soft">
                             {dailyPerformance.length} Days
                         </span>
                     </div>
@@ -281,51 +281,51 @@ const Dashboard = () => {
                             <AreaChart data={dailyPerformance} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorRevenueDaily" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#2fd3f6" stopOpacity={0.32} />
-                                        <stop offset="95%" stopColor="#2fd3f6" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.35} />
+                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#2d4f78" />
+                                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#cbd5e1" />
                                 <XAxis
                                     dataKey="period"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#b5cde8', fontSize: 10, fontWeight: 'bold' }}
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }}
                                     dy={10}
                                 />
                                 <YAxis
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#b5cde8', fontSize: 10, fontWeight: 'bold' }}
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }}
                                     tickFormatter={(val) => `Rs ${val / 1000}k`}
                                     orientation="left"
                                 />
-                                <Tooltip content={<CustomTooltip />} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(34, 211, 238, 0.08)' }} />
                                 <Area
                                     type="monotone"
                                     dataKey="revenue"
-                                    stroke="#2fd3f6"
+                                    stroke="#22d3ee"
                                     strokeWidth={3}
                                     fillOpacity={1}
                                     fill="url(#colorRevenueDaily)"
-                                    activeDot={{ r: 6, fill: '#2fd3f6', stroke: '#fff', strokeWidth: 2 }}
+                                    activeDot={{ r: 6, fill: '#22d3ee', stroke: '#fff', strokeWidth: 2 }}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
                         </div>
 
-                        <div className="bg-[#0f2241] border border-[#2a4f78] rounded-xl p-4">
-                            <p className="text-xs uppercase tracking-wide text-slate-300 font-bold mb-3">Weekday Revenue Mix</p>
+                        <div className="bg-white border border-sky-100 rounded-xl p-4 neon-hover-soft">
+                            <p className="text-xs uppercase tracking-wide text-slate-500 font-bold mb-3">Weekday Revenue Mix</p>
                             <div className="space-y-2.5">
                                 {weekdayStats.map((row) => (
                                     <div key={row.day}>
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="text-slate-200 font-semibold">{row.day}</span>
-                                            <span className="text-cyan-300 font-bold">{formatPKR(row.revenue)}</span>
+                                            <span className="text-slate-600 font-semibold">{row.day}</span>
+                                            <span className="text-sky-600 font-bold">{formatPKR(row.revenue)}</span>
                                         </div>
-                                        <div className="h-2 rounded-full bg-[#25466e] mt-1 overflow-hidden">
+                                        <div className="h-2 rounded-full bg-slate-200 mt-1 overflow-hidden">
                                             <div
-                                                className="h-full rounded-full bg-gradient-to-r from-[#7e63ff] to-[#2fd3f6]"
+                                                className="h-full rounded-full bg-gradient-to-r from-[#8b5cf6] via-[#3b82f6] to-[#22d3ee]"
                                                 style={{ width: `${Math.max(4, (row.revenue / maxWeekdayRevenue) * 100)}%` }}
                                             ></div>
                                         </div>
@@ -342,25 +342,25 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Cash Flow */}
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col">
+                <div className="panel-surface p-6 rounded-xl shadow-sm flex flex-col neon-hover">
                     <div className="flex items-center gap-3 justify-between mb-4">
-                        <h4 className="font-bold text-lg">Cash Flow Overview</h4>
-                        <Wallet className="w-5 h-5 text-textMuted" />
+                        <h4 className="widget-heading text-lg">Cash Flow Overview</h4>
+                        <Wallet className="w-5 h-5 text-textMuted dark:text-slate-300" />
                     </div>
 
                     <div className="space-y-4 flex-1">
                         <div className="flex flex-col gap-1 w-full">
                             <div className="flex justify-between items-center text-xs font-bold w-full">
-                                <span className="text-textMuted text-left">Inflow (Current Month)</span>
+                                <span className="text-textMuted dark:text-slate-300 text-left">Inflow (Current Month)</span>
                                 <span className="text-emerald-600 text-right">{formatPKR(latestRevenue)}</span>
                             </div>
-                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
                                 <div className="bg-emerald-500 h-full" style={{ width: `${Math.min(100, latestRevenue > 0 ? 70 : 0)}%` }}></div>
                             </div>
                         </div>
 
-                        <div className="mt-6 p-4 rounded-lg bg-slate-50 border border-slate-200">
-                            <p className="text-xs text-textMuted font-medium">Latest Month Revenue</p>
+                        <div className="mt-6 p-4 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700">
+                            <p className="text-xs text-textMuted dark:text-slate-300 font-medium">Latest Month Revenue</p>
                             <p className="text-xl font-extrabold text-primary pt-1">{formatPKR(latestRevenue)}</p>
                             <p className="text-[10px] text-emerald-600 font-bold mt-1">Based on latest monthly revenue data</p>
                         </div>
@@ -368,46 +368,46 @@ const Dashboard = () => {
 
                     <button 
                         onClick={() => navigate('/accounts')}
-                        className="mt-6 w-full py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-all duration-300 transform hover:-translate-y-1 hover:shadow-md hover:bg-slate-200"
+                        className="mt-6 w-full py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition-all duration-300 transform hover:-translate-y-1 hover:bg-slate-200 neon-action"
                     >
                         Manage Accounts
                     </button>
                 </div>
 
                 {/* Inventory Summary */}
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm lg:col-span-1">
+                <div className="panel-surface p-6 rounded-xl shadow-sm lg:col-span-1 neon-hover">
                     <div className="flex items-center justify-between mb-6">
-                        <h4 className="font-bold text-lg">Inventory Summary</h4>
+                        <h4 className="widget-heading text-lg">Inventory Summary</h4>
                         <div className="flex gap-2">
                             <div className="flex items-center gap-1">
                                 <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                                <span className="text-[10px] text-textMuted font-medium uppercase">Low</span>
+                                <span className="text-[10px] text-textMuted dark:text-slate-300 font-medium uppercase">Low</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="space-y-3">
                         {lowStock.length === 0 && (
-                            <div className="p-4 border border-dashed border-gray-200 rounded-lg text-center text-sm text-textMuted">
+                            <div className="p-4 border border-dashed border-gray-200 dark:border-slate-700 rounded-lg text-center text-sm text-textMuted dark:text-slate-300">
                                 No inventory items available yet.
                             </div>
                         )}
                         {lowStock.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg">
+                            <div key={idx} className="panel-surface-strong flex items-center justify-between p-3 rounded-lg neon-hover-soft">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 bg-primary/10 rounded flex flex-shrink-0 items-center justify-center text-primary">
                                         {item.isReorder ? <AlertTriangle className="w-5 h-5" /> : <Package className="w-5 h-5" />}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-bold truncate">{item.product_name}</p>
-                                        <p className="text-[10px] text-textMuted">{item.stock_quantity} Units • {item.product_code || item.sku}</p>
+                                        <p className="text-sm font-bold text-textMain dark:text-slate-100 truncate">{item.product_name}</p>
+                                        <p className="text-[10px] text-textMuted dark:text-slate-300">{item.stock_quantity} Units • {item.product_code || item.sku}</p>
                                     </div>
                                 </div>
                                 <div className="text-right flex-shrink-0 ml-2">
                                     {item.isReorder ? (
                                         <span className="text-[10px] font-bold text-rose-500 whitespace-nowrap">Reorder</span>
                                     ) : (
-                                        <p className="text-sm font-bold whitespace-nowrap">{formatPKR(item.inventory_value)}</p>
+                                        <p className="text-sm font-bold text-textMain dark:text-slate-100 whitespace-nowrap">{formatPKR(item.inventory_value)}</p>
                                     )}
                                 </div>
                             </div>
@@ -416,9 +416,9 @@ const Dashboard = () => {
                 </div>
 
                 {/* Recent Activities */}
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                <div className="panel-surface p-6 rounded-xl shadow-sm neon-hover">
                     <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-bold text-lg">Recent Activities</h4>
+                        <h4 className="widget-heading text-lg">Recent Activities</h4>
                         <button onClick={() => navigate('/invoices')} className="text-primary text-xs font-bold hover:underline">View All</button>
                     </div>
 
@@ -428,17 +428,17 @@ const Dashboard = () => {
                                 <div className="flex items-center gap-3">
                                     <Receipt className="w-5 h-5 text-primary flex-shrink-0" />
                                     <div className="min-w-0">
-                                        <p className="text-sm font-semibold truncate">Sale #{sale.sale_id} - {sale.customer_name}</p>
-                                        <p className="text-[10px] text-textMuted">{sale.sale_date}</p>
+                                        <p className="text-sm font-semibold text-textMain dark:text-slate-100 truncate">Sale #{sale.sale_id} - {sale.customer_name}</p>
+                                        <p className="text-[10px] text-textMuted dark:text-slate-300">{sale.sale_date}</p>
                                     </div>
                                 </div>
-                                <p className="text-sm font-bold flex-shrink-0 ml-2 whitespace-nowrap text-textMain">
+                                <p className="text-sm font-bold flex-shrink-0 ml-2 whitespace-nowrap text-textMain dark:text-slate-100">
                                     {formatPKR(sale.total_price)}
                                 </p>
                             </div>
                         ))}
                         {recentSales.length === 0 && (
-                            <div className="text-sm text-textMuted">No recent sales found.</div>
+                            <div className="text-sm text-textMuted dark:text-slate-300">No recent sales found.</div>
                         )}
                     </div>
                 </div>

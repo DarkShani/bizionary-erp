@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -7,24 +9,101 @@
   --color-secondary: #f1f5f9;
   --color-background: #F8FAFC;
   --color-surface: #FFFFFF;
-  --color-textMain: #0f172a;
-  --color-textMuted: #64748b;
+  --color-textMain: #020617;
+  --color-textMuted: #475569;
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-warning: #f59e0b;
   --color-ai-purple: #8b5cf6;
   --color-background-light: #f6f7f8;
   --color-background-dark: #101a22;
+  --color-neon-cyan: #22d3ee;
+  --color-neon-blue: #3b82f6;
+  --color-neon-violet: #8b5cf6;
+  --color-neon-pink: #ec4899;
+  --color-neon-lime: #84cc16;
+  --color-neon-amber: #f59e0b;
 }
 
 
 @layer base {
   body {
-    background-color: var(--color-background);
+    background:
+      linear-gradient(180deg, rgba(248, 250, 252, 0.42) 0%, rgba(241, 245, 249, 0.52) 100%),
+      var(--app-wallpaper-image, url('/wallpapers/irina-iriser-2Y4dE8sdhlc-unsplash.jpg'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: var(--color-textMain);
-    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     margin: 0;
   }
+
+  .dark body {
+    background:
+      linear-gradient(180deg, rgba(2, 6, 23, 0.52) 0%, rgba(15, 23, 42, 0.62) 100%),
+      var(--app-wallpaper-image, url('/wallpapers/irina-iriser-2Y4dE8sdhlc-unsplash.jpg'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #e2e8f0;
+  }
+}
+
+.panel-surface {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(242, 248, 255, 0.78));
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  backdrop-filter: blur(6px);
+}
+
+.dark .panel-surface {
+  background: linear-gradient(145deg, rgba(14, 23, 46, 0.78), rgba(22, 36, 68, 0.72));
+  border: 1px solid rgba(71, 85, 105, 0.45);
+}
+
+.panel-surface-strong {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.9), rgba(234, 244, 255, 0.84));
+  border: 1px solid rgba(99, 102, 241, 0.16);
+  backdrop-filter: blur(8px);
+}
+
+.dark .panel-surface-strong {
+  background: linear-gradient(155deg, rgba(18, 30, 58, 0.82), rgba(28, 46, 84, 0.76));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.tone-revenue {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.11), rgba(20, 184, 166, 0.08));
+}
+
+.dark .tone-revenue {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(14, 116, 144, 0.18));
+}
+
+.tone-expense {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(251, 146, 60, 0.08));
+}
+
+.dark .tone-expense {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.2), rgba(194, 65, 12, 0.2));
+}
+
+.tone-profit {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.11), rgba(139, 92, 246, 0.08));
+}
+
+.dark .tone-profit {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(109, 40, 217, 0.2));
+}
+
+.tone-cash {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(249, 115, 22, 0.08));
+}
+
+.dark .tone-cash {
+  background: linear-gradient(135deg, rgba(202, 138, 4, 0.24), rgba(194, 65, 12, 0.2));
 }
 
 .ai-gradient {
@@ -33,4 +112,82 @@
 
 .ai-glow {
   box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+}
+
+.neon-hover {
+  transition: box-shadow 240ms ease, border-color 240ms ease, transform 240ms ease, background-color 240ms ease;
+  transform-origin: center;
+}
+
+.neon-hover:hover {
+  border-color: rgba(14, 165, 233, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.25),
+    0 0 22px rgba(14, 165, 233, 0.22),
+    0 0 48px rgba(139, 92, 246, 0.16);
+  transform: translateY(-3px) scale(1.035);
+}
+
+.dark .neon-hover:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.3),
+    0 0 26px rgba(56, 189, 248, 0.25),
+    0 0 52px rgba(129, 140, 248, 0.24);
+}
+
+.kpi-zoom {
+  transform-origin: center;
+}
+
+.kpi-zoom:hover {
+  transform: translateY(-4px) scale(1.065);
+}
+
+.neon-hover-soft {
+  transition: box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease;
+  transform-origin: center;
+}
+
+.neon-hover-soft:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.2),
+    0 0 16px rgba(34, 211, 238, 0.16);
+  transform: scale(1.02);
+}
+
+.dark .neon-hover-soft:hover {
+  border-color: rgba(99, 102, 241, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.35),
+    0 0 20px rgba(56, 189, 248, 0.2);
+}
+
+.neon-action:hover {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.4),
+    0 0 18px rgba(14, 165, 233, 0.3);
+  transform: translateY(-1px) scale(1.04);
+}
+
+.heading-legible {
+  color: #020617;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.62), 0 2px 12px rgba(2, 6, 23, 0.2);
+}
+
+.dark .heading-legible {
+  color: #e2e8f0;
+  text-shadow: none;
+}
+
+.widget-heading {
+  color: #020617;
+  font-weight: 800;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.52);
+}
+
+.dark .widget-heading {
+  color: #f1f5f9;
+  text-shadow: none;
 }

@@ -8,9 +8,9 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     const navigation = [
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-        { name: 'Products', href: '/products', icon: Package },
+        { name: 'Sales and Items', href: '/products', icon: Package },
         { name: 'Sales', href: '/sales', icon: ShoppingCart },
-        { name: 'Inventory Managment', href: '/inventory-managment', icon: Boxes },
+        { name: 'Customer and Stocks', href: '/inventory-managment', icon: Boxes },
         { name: 'Accounts', href: '/accounts', icon: FolderKanban },
         { name: 'User Management', href: '/user-management', icon: Settings },
     ];
@@ -25,7 +25,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 />
             )}
             
-            <div className={`fixed inset-y-0 left-0 z-50 md:relative md:translate-x-0 w-64 h-screen bg-surface dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 flex flex-col flex-shrink-0 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed inset-y-0 left-0 z-50 md:relative md:translate-x-0 w-64 h-screen bg-gradient-to-b from-white via-sky-50/40 to-violet-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/70 border-r border-sky-100/60 dark:border-slate-800 flex flex-col flex-shrink-0 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Logo Section */}
                 <div className="h-24 flex items-center justify-between px-6 border-b border-transparent">
                     <div className="flex items-center gap-3">
@@ -64,7 +64,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                                         }
                                     }}
                                     className={({ isActive }) =>
-                                        `flex items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95 ${
+                                        `flex items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-300 hover:scale-105 active:scale-95 neon-hover-soft ${
                                             isActive
                                                 ? 'bg-sky-50 dark:bg-primary/20 text-primary dark:text-sky-300 shadow-sm'
                                                 : 'text-textMuted dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50 hover:text-textMain dark:hover:text-white'
